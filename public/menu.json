@@ -1,0 +1,69 @@
+{
+  "categories": [
+    { "id": "cakepops", "name": "Cake Pops", "sortOrder": 1 },
+    { "id": "cupcakes", "name": "Cupcakes", "sortOrder": 2 },
+    { "id": "cookies", "name": "Cookies", "sortOrder": 3 }
+  ],
+  "items": [
+    {
+      "id": "cakepop_chocolate",
+      "name": "Chocolate Cake Pop",
+      "categoryId": "cakepops",
+      "description": "Rich chocolate cake dipped in dark chocolate and topped with sprinkles.",
+      "basePrice": 2.5,
+      "image": "/img/cakepop_chocolate.jpg",
+      "availability": { "inStock": true },
+      "maxPerOrder": 12
+    },
+    {
+      "id": "cakepop_vanilla",
+      "name": "Vanilla Cake Pop",
+      "categoryId": "cakepops",
+      "description": "Classic vanilla cake coated in white chocolate.",
+      "basePrice": 2.5,
+      "image": "/img/cakepop_vanilla.jpg",
+      "availability": { "inStock": true },
+      "maxPerOrder": 12
+    },
+    {
+      "id": "cupcake_redvelvet",
+      "name": "Red Velvet Cupcake",
+      "categoryId": "cupcakes",
+      "description": "Moist red velvet cake with cream cheese frosting.",
+      "basePrice": 3.75,
+      "image": "/img/cupcake_redvelvet.jpg",
+      "availability": { "inStock": true },
+      "maxPerOrder": 6
+    },
+    {
+      "id": "cupcake_chocolate",
+      "name": "Chocolate Cupcake",
+      "categoryId": "cupcakes",
+      "description": "Decadent chocolate cupcake with chocolate buttercream.",
+      "basePrice": 3.75,
+      "image": "/img/cupcake_chocolate.jpg",
+      "availability": { "inStock": false },
+      "maxPerOrder": 6
+    },
+    {
+      "id": "cookie_chocolatechip",
+      "name": "Chocolate Chip Cookie",
+      "categoryId": "cookies",
+      "description": "Classic chewy cookie loaded with chocolate chips.",
+      "basePrice": 2.0,
+      "image": "/img/cookie_chocolatechip.jpg",
+      "availability": { "inStock": true },
+      "maxPerOrder": 24
+    },
+    {
+      "id": "cookie_snickerdoodle",
+      "name": "Snickerdoodle Cookie",
+      "categoryId": "cookies",
+      "description": "Soft and chewy cookie rolled in cinnamon sugar.",
+      "basePrice": 2.0,
+      "image": "/img/cookie_snickerdoodle.jpg",
+      "availability": { "inStock": true },
+      "maxPerOrder": 24
+    }
+  ]
+}
