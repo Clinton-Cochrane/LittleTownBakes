@@ -3,6 +3,17 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OrderRecord } from "@/lib/orderTypes";
 import { notifyNewOrder } from "@/lib/notify";
 
+export async function GET(_:Request, {params}: {params: {id: string}}) {
+    const {data, error} = await supabaseAdmin
+    .from("orders")
+    .select("payload")
+    .eq("id", params.id)
+    .single()
+
+    if(error || !data) return new NextResponse("Not Found", {status:404});
+    return NextResponse.json(data.payload);
+}
+
 export async function POST(req: NextRequest) {
 	try {
 		const body = (await req.json()) as Pick<OrderRecord, "customer" | "items" | "totals">;
