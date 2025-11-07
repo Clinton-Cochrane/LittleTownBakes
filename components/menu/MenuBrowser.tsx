@@ -6,7 +6,7 @@ import { getMenuCatalog, buildSections, isItemAvailable, formatCurrency } from "
 import MenuSection from "./MenuSection";
 
 type MenuBrowserProps = {
-	onAddToCart: (payload: { itemId: string; name: string; unitPrice: number; qty: number }) => void;
+	onAddToCart: (payload: { itemId: string; name: string; unitPrice: number; qty: number,image?:string, categoryId?: string, categoryName?: string, maxPerOrder?: number }) => void;
 	getQty: (id:string) => number;
 	onSetQty: (p:{itemId:string; name:string; unitPrice: number; qty: number}) => void;
 };

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useCart } from "./useCart";
 
 export default function CartDropdown() {
@@ -7,9 +8,9 @@ export default function CartDropdown() {
 		return (
 			<div className="absolute right-0 mt-2 p-4 bg-white shadow rounded">
 				<p>your cart is empty; let&#39;s fill it up</p>
-				<a href="/" className="text-blue-500 underline">
+				<Link href="/" className="text-blue-500 underline">
 					View Menu
-				</a>
+				</Link>
 			</div>
 		);
 	}

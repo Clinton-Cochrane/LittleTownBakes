@@ -10,7 +10,7 @@ type CartItem = {
 	image?: string;
 	categoryId?: string;
 	categoryName?: string;
-	maxPerOrder?: number;
+	maxPerOrder?: number; // 👈 snapshot cap
 };
 
 type CartContextValue = {
@@ -19,18 +19,23 @@ type CartContextValue = {
 	addItem: (item: CartItem) => void;
 	removeItem: (id: string) => void;
 	clearCart: () => void;
-	getQty: (id: string) => number; // always a number
-	setQty: (id: string, qty: number) => void; // 0 removes; no auto-create
+	getQty: (id: string) => number;
+	setQty: (id: string, qty: number) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "cb_cart_v1";
 
+// fallback cap if none provided
+const MAX_FALLBACK = 99;
+const clampQty = (next: number, max?: number) =>
+	Math.max(0, Math.min(typeof max === "number" && max > 0 ? max : MAX_FALLBACK, next));
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
 	const [items, setItems] = useState<CartItem[]>([]);
 	const [hydrated, setHydrated] = useState(false);
 
-	//hydrate
+	// hydrate
 	useEffect(() => {
 		try {
 			const raw = localStorage.getItem(STORAGE_KEY);
@@ -45,7 +50,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	//persist
+	// persist
 	useEffect(() => {
 		if (!hydrated) return;
 		try {
@@ -55,7 +60,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 		}
 	}, [items, hydrated]);
 
-	//cross-tab sync
+	// cross-tab sync
 	useEffect(() => {
 		const handler = (e: StorageEvent) => {
 			if (e.key !== STORAGE_KEY) return;
@@ -68,12 +73,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 		return () => window.removeEventListener("storage", handler);
 	}, []);
 
+	/* ---------- ENFORCE MAX CAP IN THE STORE ---------- */
 	const addItem = useCallback((incoming: CartItem) => {
 		setItems((prev) => {
 			const idx = prev.findIndex((i) => i.id === incoming.id);
-			if (idx === -1) return [...prev, incoming];
+			if (idx === -1) {
+				// first add → clamp initial qty against the incoming cap (or fallback)
+				return [...prev, { ...incoming, qty: clampQty(incoming.qty, incoming.maxPerOrder) }];
+			}
 			const copy = [...prev];
-			copy[idx] = { ...copy[idx], qty: copy[idx].qty + incoming.qty };
+			// prefer existing cap if present; otherwise allow incoming to set it
+			const max = copy[idx].maxPerOrder ?? incoming.maxPerOrder;
+			const mergedQty = clampQty(copy[idx].qty + incoming.qty, max);
+			copy[idx] = {
+				...copy[idx],
+				qty: mergedQty,
+				maxPerOrder: max ?? copy[idx].maxPerOrder,
+			};
 			return copy;
 		});
 	}, []);
@@ -84,21 +100,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 	const clearCart = useCallback(() => setItems([]), []);
 
-	const getQty = useCallback(
-		(id: string) => {
-			const found = items.find((i) => i.id === id);
-			return found?.qty ?? 0;
-		},
-		[items]
-	);
+	const getQty = useCallback((id: string) => items.find((i) => i.id === id)?.qty ?? 0, [items]);
 
 	const setQty = useCallback((id: string, qty: number) => {
 		setItems((prev) => {
-			if (qty <= 0) return prev.filter((i) => i.id !== id);
 			const idx = prev.findIndex((i) => i.id === id);
-			if (idx === -1) return prev; // ✅ do not auto-create; caller should add first
+			if (idx === -1) return prev; // require initial add
+			const max = prev[idx].maxPerOrder;
+			const clamped = clampQty(qty, max);
+			if (clamped <= 0) return prev.filter((i) => i.id !== id);
 			const copy = [...prev];
-			copy[idx] = { ...copy[idx], qty };
+			copy[idx] = { ...copy[idx], qty: clamped };
 			return copy;
 		});
 	}, []);

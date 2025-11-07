@@ -6,7 +6,7 @@ type Props = {
 	section: Section;
 	isItemAvailable: (item: Item) => boolean;
 	formatCurrency: (n: number) => string;
-	onAddToCart: (p: { itemId: string; name: string; unitPrice: number; qty: number }) => void;
+	onAddToCart: (p: {  itemId: string; name: string; unitPrice: number; qty: number,image?:string, categoryId?: string, categoryName?: string, maxPerOrder?: number}) => void;
 	getQty: (id: string) => number;
 	onSetQty: (p: { itemId: string; name: string; unitPrice: number; qty: number }) => void;
 };
@@ -48,7 +48,7 @@ export default function MenuSection({ ...props }: Props) {
 								formatCurrency={props.formatCurrency}
 								qty={qty}
 								maxPerOrder={max}
-								onAdd={() => props.onAddToCart({ itemId: it.id, name: it.name, unitPrice: it.basePrice, qty: 1 })}
+								onAdd={() => props.onAddToCart({ itemId: it.id, name: it.name, unitPrice: it.basePrice, qty: 1})}
 								onSetQty={(newQty: number) =>
 									props.onSetQty({ itemId: it.id, name: it.name, unitPrice: it.basePrice, qty: newQty })
 								}

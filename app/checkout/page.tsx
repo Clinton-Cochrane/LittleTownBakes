@@ -9,7 +9,7 @@ import VenmoTile from "@/components/checkout/paymentTiles/VenmoTile";
 export default function CheckoutPage() {
 	const router = useRouter();
 	const { items, clearCart } = useCart();
-	const { submitting, setSubmitting } = useState(false);
+	const [submitting, setSubmitting] = useState(false);
 
 	const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
 
