@@ -11,7 +11,7 @@
       "categoryId": "cakepops",
       "description": "Rich chocolate cake dipped in dark chocolate and topped with sprinkles.",
       "basePrice": 2.5,
-      "image": "/img/cakepop_chocolate.jpg",
+      "image": "/img/cakepop_chocolate.png",
       "availability": { "inStock": true },
       "maxPerOrder": 12
     },
@@ -21,7 +21,7 @@
       "categoryId": "cakepops",
       "description": "Classic vanilla cake coated in white chocolate.",
       "basePrice": 2.5,
-      "image": "/img/cakepop_vanilla.jpg",
+      "image": "/img/cakepop_vanilla.png",
       "availability": { "inStock": true },
       "maxPerOrder": 12
     },
@@ -31,7 +31,7 @@
       "categoryId": "cupcakes",
       "description": "Moist red velvet cake with cream cheese frosting.",
       "basePrice": 3.75,
-      "image": "/img/cupcake_redvelvet.jpg",
+      "image": "/img/cupcake_redvelvet.png",
       "availability": { "inStock": true },
       "maxPerOrder": 6
     },
@@ -41,7 +41,7 @@
       "categoryId": "cupcakes",
       "description": "Decadent chocolate cupcake with chocolate buttercream.",
       "basePrice": 3.75,
-      "image": "/img/cupcake_chocolate.jpg",
+      "image": "/img/cupcake_chocolate.png",
       "availability": { "inStock": false },
       "maxPerOrder": 6
     },
@@ -51,7 +51,7 @@
       "categoryId": "cookies",
       "description": "Classic chewy cookie loaded with chocolate chips.",
       "basePrice": 2.0,
-      "image": "/img/cookie_chocolatechip.jpg",
+      "image": "/img/cookie_chocolatechip.png",
       "availability": { "inStock": true },
       "maxPerOrder": 24
     },
@@ -61,7 +61,7 @@
       "categoryId": "cookies",
       "description": "Soft and chewy cookie rolled in cinnamon sugar.",
       "basePrice": 2.0,
-      "image": "/img/cookie_snickerdoodle.jpg",
+      "image": "/img/cookie_snickerdoodle.png",
       "availability": { "inStock": true },
       "maxPerOrder": 24
     }

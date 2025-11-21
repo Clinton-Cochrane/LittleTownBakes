@@ -13,7 +13,7 @@ export default function Header() {
 	const count = useMemo(() => items.reduce((n, i) => n + i.qty, 0), [items]);
 
 	return (
-		<header className="flex items-center justify-between px-4 py-2 shadow">
+		<header className="flex items-center justify-between px-4 py-2 shadow bg-[#abd2ff] text-white">
 			<h1 className="text-lg font-semibold">Cottage Bakery</h1>
 			<button
 				onClick={() => setOpen(true)}
