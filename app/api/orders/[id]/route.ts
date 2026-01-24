@@ -1,13 +1,34 @@
-import { NextResponse } from "next/server";
-import {supabaseAdmin} from "@/lib/supabaseAdmin";
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(_: Request, {params} : {params: {id:string}}){
-    const {data, error} = await supabaseAdmin
-        .from("orders")
-        .select("payload")
-        .eq("id", params.id)
-        .single();
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-        if(error || !data) return new NextResponse("Not found", {status: 404});
-        return NextResponse.json(data.payload);
+  // 🔑 TEMP: if Supabase isn't configured, return fake data
+  if (!process.env.SUPABASE_URL) {
+    return NextResponse.json({
+      id,
+      status: "MOCK",
+      customer: { name: "Test Customer" },
+      items: [],
+      totals: { subtotal: 2500, tax: 200, total: 2700 },
+      createdAt: new Date().toISOString(),
+    });
+  }
+  const supabaseAdmin = getSupabaseAdmin();
+
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select("payload")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
+  return NextResponse.json(data.payload);
 }
