@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MenuCatalog, Section } from "@/lib/menuCatalog";
-import { getMenuCatalog, buildSections, isItemAvailable, formatCurrency } from "@/lib/menuCatalog";
+import type { MenuCatalog, Section, EnrichedItem } from "@/lib/menuCatalog";
+import { buildSections, formatCurrency } from "@/lib/menuCatalog";
 import MenuSection from "./MenuSection";
 
 type MenuBrowserProps = {
@@ -11,10 +11,13 @@ type MenuBrowserProps = {
 	onSetQty: (p:{itemId:string; name:string; unitPrice: number; qty: number}) => void;
 };
 
+function isItemAvailable(item: EnrichedItem): boolean {
+	return (item as EnrichedItem).available ?? item.availability.inStock;
+}
+
 export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrowserProps) {
 	const [catalog, setCatalog] = useState<MenuCatalog>({ categories: [], items: [] });
 	const [loading, setLoading] = useState(true);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -22,12 +25,14 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 		(async () => {
 			setLoading(true);
 			setError(null);
-			const data = await getMenuCatalog();
+			const res = await fetch("/api/menu", { cache: "no-store" });
+			const data = await res.json();
 			if (!alive) return;
-			if (!data.categories.length && !data.items.length) {
-				setError("Menu is currently unavailable ");
+			if (!res.ok || (!data.categories?.length && !data.items?.length)) {
+				setError("Menu is currently unavailable");
+			} else {
+				setCatalog(data);
 			}
-			setCatalog(data);
 			setLoading(false);
 		})();
 		return () => {
@@ -44,8 +49,8 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 			</div>
 		);
 	}
-	if (!sections.length) {
-		return <div style={{ padding: 16 }}> No Items Available Yet. Please Check Back Later</div>;
+	if (error || !sections.length) {
+		return <div style={{ padding: 16 }}>{error ?? "No Items Available Yet. Please Check Back Later"}</div>;
 	}
 
 	return (
@@ -57,8 +62,8 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 					isItemAvailable={isItemAvailable}
 					formatCurrency={formatCurrency}
 					onAddToCart={onAddToCart}
-					getQty = {getQty}
-					onSetQty = {onSetQty}
+					getQty={getQty}
+					onSetQty={onSetQty}
 				/>
 			))}
 		</div>

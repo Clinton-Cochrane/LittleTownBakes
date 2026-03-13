@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import CartIcon from "./cart/cartIcon";
 import CartSheet from "./cart/CartSheet";
 import { useCart } from "./cart/useCart";
@@ -14,7 +15,12 @@ export default function Header() {
 
 	return (
 		<header className="flex items-center justify-between px-4 py-2 shadow bg-[#abd2ff] text-white">
-			<h1 className="text-lg font-semibold">Cottage Bakery</h1>
+			<div className="flex items-center gap-4">
+				<h1 className="text-lg font-semibold">Cottage Bakery</h1>
+				<Link href="/request-flavor" className="text-sm underline opacity-90 hover:opacity-100">
+					Request a flavor
+				</Link>
+			</div>
 			<button
 				onClick={() => setOpen(true)}
 				aria-label={`Open Cart (${count} items)`}

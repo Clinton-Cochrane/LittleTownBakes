@@ -1,9 +1,10 @@
 // lib/supabaseAdmin.ts
 import { createClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only
+// Placeholders for build when env vars are not set (e.g. CI)
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const service = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder";
 
 export const supabaseAdmin = createClient(url, service, {
-    auth: { persistSession: false, autoRefreshToken: false },
+	auth: { persistSession: false, autoRefreshToken: false },
 });

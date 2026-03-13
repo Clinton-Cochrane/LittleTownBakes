@@ -43,7 +43,8 @@
       "basePrice": 3.75,
       "image": "/img/cupcake_chocolate.png",
       "availability": { "inStock": false },
-      "maxPerOrder": 6
+      "maxPerOrder": 6,
+      "isArchived": true
     },
     {
       "id": "cookie_chocolatechip",

@@ -36,7 +36,7 @@ export default function MenuSection({ ...props }: Props) {
                         }
                     }
                     `}</style>
-				<div className={`menu-grid-$[category.id]`}>
+				<div className={`menu-grid-${category.id}`}>
 					{items.map((it) => {
 						const qty = props.getQty(it.id);
 						const max = it.maxPerOrder ?? 99;

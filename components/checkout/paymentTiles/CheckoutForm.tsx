@@ -12,30 +12,48 @@ export type CheckoutData = {
 
 export default function CheckoutForm({ onSubmit }: { onSubmit: (data: CheckoutData) => void }) {
 	const [form, setForm] = useState<CheckoutData>({ name: "", email: "" });
-	const isValid = useMemo(() => form.name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.email), [form]);
+	const isValid = useMemo(
+		() => form.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()),
+		[form]
+	);
 	return (
 		<form
+			id="checkout-form"
 			onSubmit={(e) => {
 				e.preventDefault();
 				if (isValid) onSubmit(form);
 			}}
 			style={{ display: "grid", gap: 8 }}
 		>
-			{[
-				{ key: "name", label: "Name *" },
-				{ key: "email", label: "Email *" },
-				{ key: "phone", label: "Phone (optional)" },
-			].map((f) => (
-				<label key={f.key}>
-					<div style={{ marginBottom: 4 }}>{f.label}</div>
+				<label>
+					<div style={{ marginBottom: 4 }}>Name *</div>
 					<input
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						value={(form as any)[f.key] ?? ""}
-						onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+						value={form.name}
+						onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+						required
+						minLength={2}
 						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
 					/>
 				</label>
-			))}
+				<label>
+					<div style={{ marginBottom: 4 }}>Email *</div>
+					<input
+						type="email"
+						value={form.email}
+						onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
+						required
+						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+					/>
+				</label>
+				<label>
+					<div style={{ marginBottom: 4 }}>Phone (optional)</div>
+					<input
+						type="tel"
+						value={form.phone ?? ""}
+						onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
+						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+					/>
+				</label>
 			<label>
 				<div style={{ marginBottom: 4 }}>Order notes (optional)</div>
 				<textarea

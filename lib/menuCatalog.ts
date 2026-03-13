@@ -18,7 +18,14 @@ export type Item = {
     tags?: string[];
     availability: Availability;
     maxPerOrder?: number;
+    isArchived?: boolean;
     variants?: Array<{id: string; name: string; deltaPrice?: number; price?: number}>;
+};
+
+/** Item with inventory-derived availability (from API) */
+export type EnrichedItem = Item & {
+    remaining?: number;
+    available?: boolean;
 };
 
 export type MenuCatalog = {

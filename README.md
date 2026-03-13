@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Little Town Bakes
 
-## Getting Started
+Cottage bakery ordering app with menu, cart, checkout, and admin.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Copy `.env.example` to `.env.local` and fill in values.
+2. Run Supabase migrations in `supabase/migrations/` via Supabase SQL Editor or CLI.
+3. `npm install && npm run dev`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `ADMIN_KEY` | Yes | Shared secret for admin API access |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database
 
-## Learn More
+Run migrations in order:
 
-To learn more about Next.js, take a look at the following resources:
+1. `20250313000000_create_inventory_slots.sql` – inventory per item per period
+2. `20250313000001_create_flavor_requests.sql` – customer flavor requests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Menu
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Edit `public/menu.json` to add/remove items. Set `isArchived: true` to move items to "Request a flavor" only.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Vercel**: Connect repo, set env vars, deploy.
+- Health check: `GET /api/health`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` – development with Turbopack
+- `npm run build` – production build
+- `npm run start` – production server

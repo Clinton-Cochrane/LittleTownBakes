@@ -32,9 +32,19 @@ export default function OrderPage() {
 			</main>
 		);
 
+	const isAwaitingPayment = order.status === "AWAITING_PAYMENT";
+
 	return (
 		<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
 			<h1>Order #{order.id}</h1>
+			{isAwaitingPayment && (
+				<div style={{ padding: 12, borderRadius: 8, background: "#eff6ff", border: "1px solid #93c5fd", marginBottom: 16 }}>
+					<p style={{ margin: 0, fontWeight: 600 }}>Order placed!</p>
+					<p style={{ margin: "8px 0 0", color: "#1e40af" }}>
+						Pay via Venmo and we&apos;ll confirm your order. You can check back here for status updates.
+					</p>
+				</div>
+			)}
 			<div style={{ padding: 8, borderRadius: 8, background: "#f3f4f6", margin: "8px 0" }}>
 				Status: <strong>{order.status.replaceAll("_", " ")}</strong>
 			</div>
@@ -54,7 +64,7 @@ export default function OrderPage() {
 						}}
 					>
 						<div>
-							<div style={{ fontWeight: 600 }}>i.name</div>
+							<div style={{ fontWeight: 600 }}>{i.name}</div>
 							<div style={{ color: "#6b7280", fontSize: 12 }}>
 								{formatCurrency(i.price)} x {i.qty}
 							</div>
