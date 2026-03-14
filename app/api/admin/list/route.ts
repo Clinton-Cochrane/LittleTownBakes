@@ -1,10 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
-import {supabaseAdmin} from "@/lib/supabaseAdmin";
+import {getSupabaseAdmin} from "@/lib/supabaseAdmin";
 
 export async function GET (req: NextRequest) {
     const adminKey = req.headers.get("x-admin-key");
     if(adminKey !== process.env.ADMIN_KEY)return new NextResponse("Unauthorized", {status: 401});
 
+    const supabaseAdmin = getSupabaseAdmin();
     const status = req.nextUrl.searchParams.get("status") ?? undefined;
     let query = supabaseAdmin.from("orders").select("payload").order("created_at", {ascending:false});
     if(status) query = query.contains("payload", {status});
