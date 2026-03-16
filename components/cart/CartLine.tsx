@@ -3,67 +3,54 @@
 import { useMemo } from "react";
 import { useCart } from "./useCart";
 import { formatCurrency } from "@/lib/menuCatalog";
+import TrashIcon from "@/components/icons/TrashIcon";
 
 type Props = { itemId: string; onRemove: () => void };
 
 export default function CartLine({ itemId, onRemove }: Props) {
 	const { items, getQty, setQty } = useCart();
 	const item = items.find((i) => i.id === itemId);
-	if (!item) return null;
-
-	const qty = getQty(itemId);
-	const max = item.maxPerOrder ?? 99;
+	const qty = item ? getQty(itemId) : 0;
+	const max = item?.maxPerOrder ?? 99;
 	const canInc = qty < max;
 	const canDec = qty > 0;
-	// eslint-disable-next-line react-hooks/rules-of-hooks
-	const lineTotal = useMemo(() => item.price * qty, [item.price, qty]);
+	const lineTotal = useMemo(() => (item ? item.price * qty : 0), [item, qty]);
+
+	if (!item) return null;
 
 	return (
 		<article
-			style={{
-				display: "grid",
-				gridTemplateColumns: "64px 1fr auto",
-				gap: 12,
-				alignItems: "center",
-				padding: 8,
-				border: "1px solid #e5e7eb",
-				borderRadius: 10,
-			}}
+			className="flex gap-4 rounded-lg border border-crust bg-wheat p-4"
 			aria-label={`${item.name} line`}
 		>
-			{/*thumbnail */}
-			<div style={{ width: 64, height: 64, borderRadius: 8, background: "#f3f4f6", overflow: "hidden" }} aria-hidden>
-				{item.image ? (
-					// eslint-disable-next-line @next/next/no-img-element
-					<img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-				) : null}
+			<div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-cream sm:h-16 sm:w-16" aria-hidden>
+				{/* eslint-disable-next-line @next/next/no-img-element */}
+				<img
+					src={item.image || "/img/placeholder.svg"}
+					alt=""
+					className="h-full w-full object-cover"
+					onError={(e) => {
+						(e.target as HTMLImageElement).src = "/img/placeholder.svg";
+					}}
+				/>
 			</div>
 
-			{/*title, unit, stepper */}
-			<div style={{ display: "grid", gap: 6 }}>
-				<div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-					<strong>{item.name}</strong>
-					<span style={{ color: "#6b7280" }}> {formatCurrency(item.price)} ea</span>
+			<div className="min-w-0 flex-1">
+				<div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+					<strong className="text-cocoa">{item.name}</strong>
+					<span className="text-sm text-sage shrink-0">{formatCurrency(item.price)} ea</span>
 				</div>
 
-				<div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+				<div className="mt-2 flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={() => setQty(itemId, qty - 1)}
 						disabled={!canDec}
 						aria-label={`Decrease ${item.name} to ${qty - 1}`}
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 8,
-							border: "1px solid #e5e7eb",
-							background: "#fff",
-							cursor: canDec ? "pointer" : "not-allowed",
-						}}
+						className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-crust bg-cream text-cocoa transition-colors hover:border-honey disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						-
+						−
 					</button>
-
 					<input
 						type="number"
 						value={qty}
@@ -74,46 +61,32 @@ export default function CartLine({ itemId, onRemove }: Props) {
 							setQty(itemId, v);
 						}}
 						aria-label={`Set ${item.name} quantity`}
-						style={{ width: 56, textAlign: "center", border: "1px solid #e5e7eb", borderRadius: 8, padding: "4px 8px" }}
+						className="input-base w-12 shrink-0 py-1 text-center text-sm"
 					/>
-
 					<button
 						type="button"
 						onClick={() => setQty(itemId, qty + 1)}
 						disabled={!canInc}
 						aria-label={`Increase ${item.name} to ${qty + 1}`}
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 8,
-							border: "1px solid #e5e7eb",
-							background: "fff",
-							cursor: canInc ? "pointer" : "not-allowed",
-						}}
+						className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-crust bg-cream text-cocoa transition-colors hover:border-honey disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						+
 					</button>
-
 					<button
 						type="button"
 						onClick={onRemove}
 						aria-label={`Remove ${item.name} from cart`}
-						style={{
-							marginLeft: "auto",
-							border: "1px solid #e5e7eb",
-							background: "#fff",
-							color: "#b91c1c",
-							borderRadius: 8,
-							padding: "6px 10px",
-							cursor: "pointer",
-						}}
+						className="ml-auto flex shrink-0 items-center gap-1 rounded-lg border border-crust bg-cream px-2 py-1.5 text-berry transition-colors hover:bg-berry/10"
 					>
-						🗑️
+						<TrashIcon size={14} />
+						<span className="text-xs">Remove</span>
 					</button>
 				</div>
+
+				<div className="mt-2 flex justify-end">
+					<span className="font-semibold text-cocoa">{formatCurrency(lineTotal)}</span>
+				</div>
 			</div>
-			{/* line total */}
-			<div style={{ textAlign: "right", fontWeight: 600 }}>{formatCurrency(lineTotal)}</div>
 		</article>
 	);
 }

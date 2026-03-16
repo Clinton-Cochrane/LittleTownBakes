@@ -9,45 +9,38 @@ export default function OrderSummary() {
 	const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
 
 	if (!items.length) {
-		return <p style={{ color: "#6b7280" }}>Your cart is empty.</p>;
+		return <p className="text-sage">Your cart is empty.</p>;
 	}
 
 	return (
 		<div>
-			<h3 style={{ margin: "12px 0" }}>Order Summary</h3>
-			<div style={{ display: "grid", gap: 8 }}>
+			<h3 className="mb-4 font-display text-lg font-semibold text-cocoa">Order Summary</h3>
+			<div className="grid gap-2">
 				{items.map((it) => (
 					<div
 						key={it.id}
-						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr auto",
-							gap: 8,
-							padding: 8,
-							border: "1px solid #e5e7eb",
-							borderRadius: 10,
-						}}
+						className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-crust bg-wheat p-4"
 					>
 						<div>
-							<div style={{ fontWeight: 600 }}>{it.name}</div>
-							<div style={{ color: "#6b7280", fontSize: 12 }}>
+							<div className="font-semibold text-cocoa">{it.name}</div>
+							<div className="text-xs text-sage">
 								{formatCurrency(it.price)} × {it.qty}
 							</div>
 						</div>
-						<div style={{ textAlign: "right", fontWeight: 600 }}>{formatCurrency(it.price * it.qty)}</div>
+						<div className="text-right font-semibold text-cocoa">{formatCurrency(it.price * it.qty)}</div>
 					</div>
 				))}
 			</div>
 
-			<div style={{ marginTop: 12, display: "flex", justifyContent: "space-between" }}>
-				<span style={{ color: "#6b7280" }}>Subtotal</span>
-				<span>{formatCurrency(subtotal)}</span>
+			<div className="mt-4 flex justify-between">
+				<span className="text-sage">Subtotal</span>
+				<span className="text-cocoa">{formatCurrency(subtotal)}</span>
 			</div>
-			<div style={{ marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-				<span style={{ color: "#6b7280" }}>Tax</span>
-				<span style={{ color: "#6b7280" }}>Calculated at pickup</span>
+			<div className="mt-2 flex justify-between">
+				<span className="text-sage">Tax</span>
+				<span className="text-sage">Calculated at pickup</span>
 			</div>
-			<div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+			<div className="mt-4 flex justify-between font-bold text-cocoa">
 				<span>Total</span>
 				<span>{formatCurrency(subtotal)}</span>
 			</div>

@@ -57,8 +57,8 @@ export default function MenuPage() {
 	);
 
 	return (
-		<main className="mx-auto max-w-4xl px-4 py-6">
+		<div className="w-full">
 			<MenuBrowser onAddToCart={handleAddToCart} getQty={getQty} onSetQty={handleSetQty} />
-		</main>
+		</div>
 	);
 }

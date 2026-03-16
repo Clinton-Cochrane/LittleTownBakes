@@ -16,6 +16,7 @@ export default function CheckoutForm({ onSubmit }: { onSubmit: (data: CheckoutDa
 		() => form.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()),
 		[form]
 	);
+
 	return (
 		<form
 			id="checkout-form"
@@ -23,80 +24,70 @@ export default function CheckoutForm({ onSubmit }: { onSubmit: (data: CheckoutDa
 				e.preventDefault();
 				if (isValid) onSubmit(form);
 			}}
-			style={{ display: "grid", gap: 8 }}
+			className="grid gap-5"
 		>
-				<label>
-					<div style={{ marginBottom: 4 }}>Name *</div>
-					<input
-						value={form.name}
-						onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-						required
-						minLength={2}
-						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-					/>
-				</label>
-				<label>
-					<div style={{ marginBottom: 4 }}>Email *</div>
-					<input
-						type="email"
-						value={form.email}
-						onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
-						required
-						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-					/>
-				</label>
-				<label>
-					<div style={{ marginBottom: 4 }}>Phone (optional)</div>
-					<input
-						type="tel"
-						value={form.phone ?? ""}
-						onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
-						style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-					/>
-				</label>
 			<label>
-				<div style={{ marginBottom: 4 }}>Order notes (optional)</div>
+				<div className="mb-1.5 text-sm font-medium text-cocoa">Name *</div>
+				<input
+					value={form.name}
+					onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+					required
+					minLength={2}
+					className="input-base"
+				/>
+			</label>
+			<label>
+				<div className="mb-1.5 text-sm font-medium text-cocoa">Email *</div>
+				<input
+					type="email"
+					value={form.email}
+					onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
+					required
+					className="input-base"
+				/>
+			</label>
+			<label>
+				<div className="mb-1.5 text-sm font-medium text-cocoa">Phone (optional)</div>
+				<input
+					type="tel"
+					value={form.phone ?? ""}
+					onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
+					className="input-base"
+				/>
+			</label>
+			<label>
+				<div className="mb-1.5 text-sm font-medium text-cocoa">Order notes (optional)</div>
 				<textarea
 					value={form.notes ?? ""}
 					onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))}
-					style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+					className="input-base min-h-20 resize-y"
 				/>
 			</label>
-			<details>
-				<summary style={{ cursor: "pointer" }}>Venmo details (optional)</summary>
-				<div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+			<details className="group">
+				<summary className="cursor-pointer text-sm font-medium text-cocoa hover:text-honey">
+					Venmo details (optional)
+				</summary>
+				<div className="mt-4 grid gap-4">
 					<label>
-						<div style={{ marginBottom: 4 }}>Your Venmo @username</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Your Venmo @username</div>
 						<input
 							value={form.venmoUser ?? ""}
 							onChange={(e) => setForm((s) => ({ ...s, venmoUser: e.target.value }))}
-							style={{ display: "grid", gap: 8, marginTop: 8 }}
+							className="input-base"
 						/>
 					</label>
-
 					<label>
-						<div style={{ marginBottom: 4 }}>Payment note</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Payment note</div>
 						<input
 							value={form.venmoNote ?? ""}
 							onChange={(e) => setForm((s) => ({ ...s, venmoNote: e.target.value }))}
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+							className="input-base"
 						/>
 					</label>
 				</div>
 			</details>
 
-			<button
-				type="submit"
-				style={{
-					marginTop: 8,
-					padding: "10px 12px",
-					borderRadius: 8,
-					border: "1px solid #111827",
-					background: "#111827",
-					color: "#fff",
-				}}
-				disabled={!isValid}
-			>
+			<button type="submit" disabled={!isValid} className="btn-primary mt-2">
 				Continue
 			</button>
 		</form>

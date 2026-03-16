@@ -1,39 +1,25 @@
 "use client";
 
 type Props = { venmoHandle: string };
+
 export default function VenmoTile({ venmoHandle }: Props) {
 	return (
-		<div
-			style={{
-				border: "1px solid #e5e7eb",
-				borderRadius: 12,
-				padding: 16,
-				display: "grid",
-				gridTemplateColumns: "96px 1fr",
-				gap: 12,
-			}}
-		>
+		<div className="flex flex-col gap-5 rounded-lg border border-crust bg-wheat p-5 sm:flex-row sm:items-start sm:p-6">
 			{/* eslint-disable-next-line @next/next/no-img-element */}
 			<img
 				src="/venmo-qr.png"
 				alt="Venmo QR"
-				style={{ width: 96, height: 96, borderRadius: 8, background: "#f3f4f6" }}
+				className="h-24 w-24 shrink-0 self-center rounded-lg bg-cream object-cover sm:self-start"
 			/>
-			<div>
-				<div style={{ fontWeight: 700 }}>Pay with Venmo</div>
-				<div style={{ color: "#6b7280", marginBottom: 8 }}>
-					Scan or send to <strong>{venmoHandle}</strong>.
+			<div className="min-w-0 flex-1">
+				<div className="font-display font-semibold text-cocoa">Pay with Venmo</div>
+				<div className="mb-3 text-sm text-sage">
+					Scan or send to <strong className="text-cocoa">{venmoHandle}</strong>.
 				</div>
-				<div style={{ display: "flex", gap: 8 }}>
+				<div className="flex flex-wrap gap-2">
 					<button
 						onClick={() => navigator.clipboard?.writeText(venmoHandle)}
-						style={{
-							padding: "8px 12px",
-							borderRadius: 8,
-							border: "1px solid #111827",
-							background: "#111827",
-							color: "#fff",
-						}}
+						className="btn-primary"
 					>
 						Copy Handle
 					</button>
@@ -41,7 +27,7 @@ export default function VenmoTile({ venmoHandle }: Props) {
 						href={`https://venmo.com/${venmoHandle.replace("@", "")}`}
 						target="_blank"
 						rel="noreferrer"
-						style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #111827", textDecoration: "none" }}
+						className="btn-secondary"
 					>
 						Open Venmo
 					</a>

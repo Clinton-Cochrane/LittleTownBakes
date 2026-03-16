@@ -3,19 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type ArchivedItem = { id: string; name: string };
+type ArchivedItem = {
+	id: string;
+	name: string;
+	description?: string;
+	image?: string;
+	basePrice?: number;
+};
 
 export default function RequestFlavorPage() {
 	const [archivedItems, setArchivedItems] = useState<ArchivedItem[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [submitted, setSubmitted] = useState(false);
+	const [requestingId, setRequestingId] = useState<string | null>(null);
 	const [form, setForm] = useState({
-		item_id: "",
 		customer_email: "",
 		customer_name: "",
 		notes: "",
 	});
 	const [error, setError] = useState<string | null>(null);
+	const [submitted, setSubmitted] = useState<string | null>(null);
 
 	useEffect(() => {
 		fetch("/api/menu")
@@ -26,106 +32,130 @@ export default function RequestFlavorPage() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
+		if (!requestingId) return;
 		setError(null);
 		const res = await fetch("/api/flavor-requests", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(form),
+			body: JSON.stringify({
+				item_id: requestingId,
+				customer_email: form.customer_email,
+				customer_name: form.customer_name,
+				notes: form.notes,
+			}),
 		});
 		if (!res.ok) {
 			const data = await res.json();
 			setError(data.error ?? "Request failed");
 			return;
 		}
-		setSubmitted(true);
-		setForm({ item_id: "", customer_email: "", customer_name: "", notes: "" });
+		setSubmitted(requestingId);
+		setRequestingId(null);
+		setForm({ customer_email: "", customer_name: "", notes: "" });
+	}
+
+	function openRequest(itemId: string) {
+		setRequestingId(itemId);
+		setError(null);
+		setSubmitted(null);
 	}
 
 	if (loading) {
 		return (
-			<main style={{ maxWidth: 560, margin: "0 auto", padding: 16 }}>
-				<p>Loading...</p>
+			<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+				<p className="text-sage">Loading...</p>
 			</main>
 		);
 	}
 
 	return (
-		<main style={{ maxWidth: 560, margin: "0 auto", padding: 16 }}>
-			<Link href="/" style={{ color: "#111827", marginBottom: 16, display: "inline-block" }}>
+		<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+			<Link href="/" className="mb-6 inline-block text-cocoa transition-colors hover:text-honey">
 				← Back to menu
 			</Link>
-			<h1 style={{ marginBottom: 8 }}>Request a Flavor</h1>
-			<p style={{ color: "#6b7280", marginBottom: 24 }}>
-				Miss a flavor? Let us know and we&apos;ll consider bringing it back.
+			<h1 className="mb-2 font-display text-3xl font-semibold text-cocoa">Past Flavors</h1>
+			<p className="mb-8 text-sage">
+				Flavors we&apos;ve retired. Loved one? Let us know and we&apos;ll consider bringing it back.
 			</p>
 
 			{archivedItems.length === 0 ? (
-				<p style={{ color: "#6b7280" }}>No archived flavors at the moment. Check back later!</p>
-			) : submitted ? (
-				<div style={{ padding: 16, background: "#f0fdf4", borderRadius: 8, border: "1px solid #86efac" }}>
-					<p style={{ margin: 0, color: "#166534" }}>Thanks! We&apos;ll let you know when this flavor returns.</p>
-					<button
-						type="button"
-						onClick={() => setSubmitted(false)}
-						style={{ marginTop: 12, padding: "8px 12px", borderRadius: 8, border: "1px solid #111827" }}
-					>
-						Request another
-					</button>
-				</div>
+				<p className="text-sage">No past flavors at the moment. Check back later!</p>
 			) : (
-				<form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-					<label>
-						<div style={{ marginBottom: 4 }}>Flavor</div>
-						<select
-							value={form.item_id}
-							onChange={(e) => setForm((f) => ({ ...f, item_id: e.target.value }))}
-							required
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+					{archivedItems.map((item) => (
+						<article
+							key={item.id}
+							className="flex flex-col gap-5 rounded-card border border-crust bg-wheat p-5 shadow-soft sm:p-6"
 						>
-							<option value="">Select a flavor</option>
-							{archivedItems.map((i) => (
-								<option key={i.id} value={i.id}>
-									{i.name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label>
-						<div style={{ marginBottom: 4 }}>Your email *</div>
-						<input
-							type="email"
-							value={form.customer_email}
-							onChange={(e) => setForm((f) => ({ ...f, customer_email: e.target.value }))}
-							required
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-						/>
-					</label>
-					<label>
-						<div style={{ marginBottom: 4 }}>Your name (optional)</div>
-						<input
-							type="text"
-							value={form.customer_name}
-							onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-						/>
-					</label>
-					<label>
-						<div style={{ marginBottom: 4 }}>Notes (optional)</div>
-						<textarea
-							value={form.notes}
-							onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-							rows={3}
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
-						/>
-					</label>
-					{error && <p style={{ color: "#dc2626", margin: 0 }}>{error}</p>}
-					<button
-						type="submit"
-						style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #111827", background: "#111827", color: "#fff" }}
-					>
-						Notify me when it&apos;s back
-					</button>
-				</form>
+							<div className="aspect-square w-full overflow-hidden rounded-lg bg-cream">
+								{item.image ? (
+									/* eslint-disable-next-line @next/next/no-img-element */
+									<img src={item.image} alt="" className="h-full w-full object-cover" />
+								) : null}
+							</div>
+							<div>
+								<h3 className="font-display text-lg font-semibold text-cocoa">{item.name}</h3>
+								{item.description && (
+									<p className="mt-1 line-clamp-2 text-sm text-sage">{item.description}</p>
+								)}
+							</div>
+							{requestingId === item.id ? (
+								<form onSubmit={handleSubmit} className="flex flex-col gap-3">
+									<input
+										type="email"
+										placeholder="Your email *"
+										value={form.customer_email}
+										onChange={(e) => setForm((f) => ({ ...f, customer_email: e.target.value }))}
+										required
+										className="input-base"
+									/>
+									<input
+										type="text"
+										placeholder="Your name (optional)"
+										value={form.customer_name}
+										onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
+										className="input-base"
+									/>
+									<textarea
+										placeholder="Notes (optional)"
+										value={form.notes}
+										onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+										rows={2}
+										className="input-base resize-y"
+									/>
+									{error && <p className="text-sm text-berry">{error}</p>}
+									<div className="flex gap-2">
+										<button type="submit" className="btn-primary flex-1">
+											Submit
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setRequestingId(null);
+												setError(null);
+											}}
+											className="btn-secondary"
+										>
+											Cancel
+										</button>
+									</div>
+								</form>
+							) : submitted === item.id ? (
+								<div className="rounded-lg border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
+									Thanks! We&apos;ll let you know when it returns.
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={() => openRequest(item.id)}
+									className="btn-secondary w-full text-center"
+								>
+									I loved this — think about returning it in circulation
+								</button>
+							)}
+						</article>
+					))}
+				</div>
 			)}
 		</main>
 	);

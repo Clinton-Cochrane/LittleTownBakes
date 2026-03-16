@@ -59,7 +59,7 @@ export default function AdminInventoryPage() {
 				}
 				return [data, ...prev];
 			});
-			setForm({ item_id: "", period_type: "week", period_start: "", quantity_available: 0 });
+			setForm({ item_id: "", period_type: "week", period_start: getWeekStart(now), quantity_available: 0 });
 		}
 	}
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#f5e6d3"/>
+  <!-- Simple croissant/baked good silhouette -->
+  <path d="M60 35 C45 35 30 50 30 70 C30 85 40 95 60 95 C80 95 90 85 90 70 C90 50 75 35 60 35 Z" fill="#e8dcc8" stroke="#d4a574" stroke-width="1.5" stroke-linejoin="round"/>
+  <text x="60" y="115" font-family="Georgia, serif" font-size="11" fill="#8b6914" text-anchor="middle">Coming soon</text>
+</svg>

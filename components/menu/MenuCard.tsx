@@ -17,84 +17,53 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 	return (
 		<article
 			aria-label={item.name}
-			style={{
-				border: "1px solid #e5e7eb",
-				borderRadius: 12,
-				padding: 16,
-				display: "flex",
-				gap: 12,
-				alignItems: "flex-start",
-				minHeight: 120,
-			}}
+			className="flex flex-col gap-5 rounded-card border border-crust bg-wheat p-5 shadow-soft transition-shadow duration-200 hover:shadow-card sm:flex-row sm:min-h-[140px] sm:gap-6 sm:p-6"
 		>
-			<div
-				style={{
-					width: 96,
-					height: 96,
-					borderRadius: 8,
-					background: "'#f3f4f6",
-					overflow: "hidden",
-					flexShrink: 0,
-				}}
-				aria-hidden
-			>
-				{item.image ? (
-					//eslint-disable-next-line @next/next/no-img-element
-					<img src={item.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-				) : null}
+			<div className="aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-cream shadow-soft sm:h-[120px] sm:w-[120px] sm:aspect-auto" aria-hidden>
+				{/* eslint-disable-next-line @next/next/no-img-element */}
+				<img
+					src={item.image || "/img/placeholder.svg"}
+					alt=""
+					className="h-full w-full object-cover"
+					onError={(e) => {
+						(e.target as HTMLImageElement).src = "/img/placeholder.svg";
+					}}
+				/>
 			</div>
 
-			<div style={{ flex: 1 }}>
-				<header style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-					<h3 style={{ margin: 0, fontSize: 16, lineHeight: "20px" }}>{item.name}</h3>
-					<span aria-label="price" style={{ fontWeight: 600 }}>
+			<div className="flex flex-1 flex-col">
+				<header className="flex items-start justify-between gap-2">
+					<h3 className="font-display text-lg font-semibold text-cocoa">{item.name}</h3>
+					<span aria-label="price" className="font-semibold text-caramel">
 						{formatCurrency(item.basePrice)}
 					</span>
 				</header>
 
 				{item.description ? (
-					<p
-						style={{
-							marginTop: 8,
-							marginBottom: 12,
-							color: "#4b5563",
-							display: "-webkit-box",
-							WebkitLineClamp: 2,
-							WebkitBoxOrient: "vertical",
-							overflow: "hidden",
-						}}
-					>
-						{item.description}
-					</p>
+					<p className="mt-3 line-clamp-2 text-sm text-cocoa/80">{item.description}</p>
 				) : null}
 
-				<div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+				<div className="mt-auto flex flex-wrap items-center gap-4 gap-y-3 pt-4">
 					{qty <= 0 ? (
 						<button
 							type="button"
 							onClick={onAdd}
 							disabled={!available}
 							aria-label={available ? `Add ${item.name} to cart` : `${item.name} is sold out`}
-							style={{
-								padding: "8px 12px",
-								borderRadius: 8,
-								border: "1px solid #111827",
-								background: available ? "#111827" : "#9ca3af",
-								color: "white",
-								cursor: available ? "pointer" : "not-allowed",
-							}}
+							className="btn-primary disabled:bg-sage disabled:border-sage"
 						>
 							{available ? "Add To Cart" : "Sold Out"}
 						</button>
 					) : (
-						<div aria-label={`quantity for ${item.name}`} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+						<div aria-label={`quantity for ${item.name}`} className="flex items-center gap-2">
 							<button
 								type="button"
 								onClick={() => onSetQty(qty - 1)}
 								disabled={!canDec}
 								aria-label={`Decrease ${item.name} quantity to ${qty - 1}`}
+								className="flex h-9 w-9 items-center justify-center rounded-lg border border-crust bg-cream text-cocoa transition-colors hover:border-honey hover:bg-wheat disabled:cursor-not-allowed disabled:opacity-50"
 							>
-								-
+								−
 							</button>
 							<input
 								type="number"
@@ -106,19 +75,14 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 									onSetQty(v);
 								}}
 								aria-label={`Set ${item.name} quantity`}
-								style={{
-									width: 56,
-									textAlign: "center",
-									border: "1px solid #e5e7eb",
-									borderRadius: 8,
-									padding: "4px 8px",
-								}}
+								className="input-base w-14 py-1.5 text-center text-sm"
 							/>
 							<button
 								type="button"
 								onClick={() => onSetQty(qty + 1)}
 								disabled={!canInc}
 								aria-label={`Increase ${item.name} quantity to ${qty + 1}`}
+								className="flex h-9 w-9 items-center justify-center rounded-lg border border-crust bg-cream text-cocoa transition-colors hover:border-honey hover:bg-wheat disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								+
 							</button>
@@ -126,7 +90,7 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 					)}
 
 					{item.maxPerOrder ? (
-						<span style={{ fontSize: 12, color: "#6b7280" }}>Max {item.maxPerOrder} per order</span>
+						<span className="text-xs text-sage">Max {item.maxPerOrder} per order</span>
 					) : null}
 				</div>
 			</div>

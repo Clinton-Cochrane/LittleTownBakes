@@ -45,40 +45,44 @@ export default function CheckoutPage() {
 			setError(json.error ?? "Order failed. Please try again.");
 			return;
 		}
+		if (!json.id) {
+			setError("Order created but received invalid response. Please contact the bakery.");
+			return;
+		}
 		clearCart();
 		router.push(`/orders/${json.id}`);
 	}
 
 	return (
-		<main style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-			<h1 style={{ marginBottom: 12 }}>Checkout</h1>
+		<main className="mx-auto max-w-3xl px-4 py-6">
+			<h1 className="mb-6 font-display text-3xl font-semibold text-cocoa">Checkout</h1>
 
-			<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-				<section style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-					<h2 style={{ marginBottom: 12 }}>Contact</h2>
+			<div className="grid gap-6">
+				<section className="card-warm p-6 sm:p-8">
+					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Contact</h2>
 					<CheckoutForm onSubmit={submit} />
 				</section>
 
-				<section style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-					<h2 style={{ marginBottom: 12 }}>Payment</h2>
-					<VenmoTile venmoHandle="@CottageBakery" />
+				<section className="card-warm p-6 sm:p-8">
+					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Payment</h2>
+					<VenmoTile venmoHandle={process.env.NEXT_PUBLIC_VENMO_HANDLE || "@LittleTownBakes"} />
 				</section>
 
-				<section style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+				<section className="card-warm p-6 sm:p-8">
 					<OrderSummary />
 					{error && (
-						<p style={{ marginTop: 8, color: "#dc2626", marginBottom: 0 }} role="alert">
+						<p className="mt-4 text-berry" role="alert">
 							{error}
 						</p>
 					)}
-					<p style={{ marginTop: 8, color: "#6b7280" }}>
+					<p className="mt-4 text-sm text-sage">
 						After you pay via Venmo, we&apos;ll confirm and update your order status.
 					</p>
 					<button
 						type="submit"
 						form="checkout-form"
 						disabled={submitting || !items.length}
-						style={{ marginTop: 8, padding: "10px 12px", borderRadius: 8, border: "1px solid #111827" }}
+						className="btn-primary mt-4"
 					>
 						{submitting ? "Submitting..." : "Place Order (Venmo)"}
 					</button>

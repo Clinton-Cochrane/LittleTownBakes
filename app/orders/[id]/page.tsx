@@ -27,53 +27,46 @@ export default function OrderPage() {
 	const subtotal = useMemo(() => order?.items.reduce((s, i) => s + i.price * i.qty, 0) ?? 0, [order]);
 	if (!order)
 		return (
-			<main style={{ padding: 16 }}>
-				<p>Loading Order...</p>
+			<main className="px-4 py-6">
+				<p className="text-sage">Loading Order...</p>
 			</main>
 		);
 
 	const isAwaitingPayment = order.status === "AWAITING_PAYMENT";
 
 	return (
-		<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-			<h1>Order #{order.id}</h1>
+		<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+			<h1 className="mb-6 font-display text-3xl font-semibold text-cocoa">Order #{order.id}</h1>
 			{isAwaitingPayment && (
-				<div style={{ padding: 12, borderRadius: 8, background: "#eff6ff", border: "1px solid #93c5fd", marginBottom: 16 }}>
-					<p style={{ margin: 0, fontWeight: 600 }}>Order placed!</p>
-					<p style={{ margin: "8px 0 0", color: "#1e40af" }}>
+				<div className="mb-6 rounded-lg border border-crust bg-wheat p-4">
+					<p className="font-semibold text-cocoa">Order placed!</p>
+					<p className="mt-2 text-sm text-cocoa/80">
 						Pay via Venmo and we&apos;ll confirm your order. You can check back here for status updates.
 					</p>
 				</div>
 			)}
-			<div style={{ padding: 8, borderRadius: 8, background: "#f3f4f6", margin: "8px 0" }}>
-				Status: <strong>{order.status.replaceAll("_", " ")}</strong>
+			<div className="mb-6 rounded-lg border border-crust bg-wheat px-4 py-3">
+				<span className="text-sage">Status:</span>{" "}
+				<strong className="text-cocoa">{order.status.replaceAll("_", " ")}</strong>
 			</div>
 
-			<section style={{ marginTop: 12 }}>
+			<section>
 				{order.items.map((i) => (
 					<div
 						key={i.id}
-						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr auto",
-							gap: 8,
-							padding: 8,
-							border: "1px solid #e5e7eb",
-							borderRadius: 10,
-							marginBottom: 6,
-						}}
+						className="mb-2 grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-crust bg-wheat p-4"
 					>
 						<div>
-							<div style={{ fontWeight: 600 }}>{i.name}</div>
-							<div style={{ color: "#6b7280", fontSize: 12 }}>
-								{formatCurrency(i.price)} x {i.qty}
+							<div className="font-semibold text-cocoa">{i.name}</div>
+							<div className="text-xs text-sage">
+								{formatCurrency(i.price)} × {i.qty}
 							</div>
 						</div>
-						<div style={{ textAlign: "right", fontWeight: 600 }}>{formatCurrency(i.price * i.qty)}</div>
+						<div className="text-right font-semibold text-cocoa">{formatCurrency(i.price * i.qty)}</div>
 					</div>
 				))}
-				<div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-					<span style={{ color: "#6b7280" }}>Total</span>
+				<div className="mt-4 flex justify-between font-semibold text-cocoa">
+					<span className="text-sage">Total</span>
 					<span>{formatCurrency(subtotal)}</span>
 				</div>
 			</section>

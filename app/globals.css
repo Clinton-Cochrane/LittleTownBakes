@@ -1,1 +1,71 @@
 @import "tailwindcss";
+
+@theme {
+	/* Warm bakery palette */
+	--color-cream: #faf6f1;
+	--color-wheat: #f5e6d3;
+	--color-honey: #d4a574;
+	--color-caramel: #8b6914;
+	--color-cocoa: #5b3b2a;
+	--color-crust: #e8dcc8;
+	--color-berry: #c45c7a;
+	--color-sage: #9ca882;
+	--color-success: #7a9b6e;
+
+	/* Typography - use next/font variables with fallbacks */
+	--font-display: var(--font-fraunces, "Fraunces", "Georgia", serif);
+	--font-body: var(--font-dm-sans, "DM Sans", "system-ui", sans-serif);
+
+	/* Shadows & depth */
+	--shadow-soft: 0 4px 12px rgba(91, 59, 42, 0.06);
+	--shadow-card: 0 8px 24px rgba(91, 59, 42, 0.08);
+	--radius-card: 12px;
+	--radius-button: 10px;
+}
+
+@layer base {
+	body {
+		@apply min-h-screen bg-cream text-cocoa font-body antialiased;
+	}
+
+	a {
+		@apply text-cocoa transition-colors duration-200;
+	}
+
+	a:hover {
+		@apply text-honey;
+	}
+
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-honey;
+	}
+
+	button:focus-visible,
+	input:focus-visible,
+	textarea:focus-visible,
+	select:focus-visible {
+		@apply outline-2 outline-offset-2 outline-honey;
+	}
+}
+
+@layer components {
+	.btn-primary {
+		@apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-button border border-caramel bg-honey px-4 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-caramel disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.btn-secondary {
+		@apply inline-flex items-center justify-center gap-2 rounded-button border border-crust bg-cream px-4 py-2.5 font-medium text-cocoa transition-colors duration-200 hover:bg-wheat hover:border-honey disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.btn-danger {
+		@apply inline-flex items-center justify-center gap-2 rounded-button border border-berry bg-berry px-4 py-2.5 font-medium text-white transition-colors duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.input-base {
+		@apply w-full rounded-lg border border-crust bg-cream px-3 py-2.5 text-cocoa transition-colors duration-200 placeholder:text-sage focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/30;
+	}
+
+	.card-warm {
+		@apply rounded-card border border-crust bg-wheat shadow-soft;
+	}
+}
