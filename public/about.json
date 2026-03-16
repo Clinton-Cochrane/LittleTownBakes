@@ -1,0 +1,23 @@
+{
+  "about": {
+    "story": "",
+    "howWeBake": "",
+    "whoWeAre": "",
+    "values": ""
+  },
+  "howToOrder": {
+    "intro": "",
+    "steps": [],
+    "pickupLocation": "",
+    "pickupHours": "",
+    "leadTime": "",
+    "payment": ""
+  },
+  "contact": {
+    "email": "",
+    "phone": "",
+    "instagram": "",
+    "facebook": "",
+    "tiktok": ""
+  }
+}

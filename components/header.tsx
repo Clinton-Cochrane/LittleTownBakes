@@ -19,6 +19,9 @@ export default function Header() {
 				<Link href="/" className="font-display text-lg font-semibold text-cocoa transition-colors hover:text-honey sm:text-xl shrink-0">
 					Little Town Bakes
 				</Link>
+				<Link href="/about" className="whitespace-nowrap text-xs text-cocoa underline-offset-2 transition-colors hover:text-honey hover:underline sm:text-sm">
+					About
+				</Link>
 				<Link href="/request-flavor" className="whitespace-nowrap text-xs text-cocoa underline-offset-2 transition-colors hover:text-honey hover:underline sm:text-sm">
 					Past flavors
 				</Link>

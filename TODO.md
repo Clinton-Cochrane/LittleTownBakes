@@ -1,5 +1,10 @@
 # Production Readiness TODO
 
+## About Page (Client Content)
+
+- [ ] Fill out `public/about.json` with bakery story, how to order, and contact info
+- [ ] See `CONTENT_ABOUT.md` for prompts and field descriptions
+
 ## Required (Blockers)
 
 - [ ] Create Supabase project

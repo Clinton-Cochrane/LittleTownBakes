@@ -31,6 +31,10 @@ Run migrations in order:
 
 Edit `public/menu.json` to add/remove items. Set `isArchived: true` to move items to the Past Flavors page only. Add product images to `public/img/` (e.g. `cakepop_chocolate.png`).
 
+## About Page
+
+Edit `public/about.json` for the About page (story, how to order, contact). See `CONTENT_ABOUT.md` for prompts and field descriptions.
+
 **Admin:** `/admin` redirects to `/admin/login`. After login, access orders, inventory, and flavor requests.
 
 ## Deployment
