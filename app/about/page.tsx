@@ -10,6 +10,11 @@ export default async function AboutPage() {
 	const content = await getAboutContent();
 	const { about, howToOrder, contact } = content;
 
+	const phoneDigits = contact.phone?.replace(/\D/g, "") ?? "";
+	const instagramUrl = contact.instagram ? toInstagramUrl(contact.instagram) : "";
+	const facebookUrl = contact.facebook ? toFacebookUrl(contact.facebook) : "";
+	const tiktokUrl = contact.tiktok ? toTiktokUrl(contact.tiktok) : "";
+
 	const hasAbout =
 		about.story || about.howWeBake || about.whoWeAre || about.values;
 	const hasHowToOrder =
@@ -67,8 +72,8 @@ export default async function AboutPage() {
 						)}
 						{howToOrder.steps.length > 0 && (
 							<ol className="list-inside list-decimal space-y-2 text-cocoa">
-								{howToOrder.steps.map((step, i) => (
-									<li key={i}>{step}</li>
+								{howToOrder.steps.map((step) => (
+									<li key={step}>{step}</li>
 								))}
 							</ol>
 						)}
@@ -137,17 +142,17 @@ export default async function AboutPage() {
 								{contact.email}
 							</a>
 						)}
-						{contact.phone && (
+						{phoneDigits && contact.phone && (
 							<a
-								href={`tel:${contact.phone.replace(/\D/g, "")}`}
+								href={`tel:${phoneDigits}`}
 								className="text-cocoa underline-offset-2 hover:text-honey hover:underline"
 							>
 								{contact.phone}
 							</a>
 						)}
-						{contact.instagram && (
+						{instagramUrl && (
 							<a
-								href={toInstagramUrl(contact.instagram)}
+								href={instagramUrl}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-cocoa underline-offset-2 hover:text-honey hover:underline"
@@ -155,9 +160,9 @@ export default async function AboutPage() {
 								Instagram
 							</a>
 						)}
-						{contact.facebook && (
+						{facebookUrl && (
 							<a
-								href={toFacebookUrl(contact.facebook)}
+								href={facebookUrl}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-cocoa underline-offset-2 hover:text-honey hover:underline"
@@ -165,9 +170,9 @@ export default async function AboutPage() {
 								Facebook
 							</a>
 						)}
-						{contact.tiktok && (
+						{tiktokUrl && (
 							<a
-								href={toTiktokUrl(contact.tiktok)}
+								href={tiktokUrl}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-cocoa underline-offset-2 hover:text-honey hover:underline"
