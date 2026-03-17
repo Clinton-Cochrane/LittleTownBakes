@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useCart } from "@/components/cart/useCart";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm, { CheckoutData } from "@/components/checkout/paymentTiles/CheckoutForm";
@@ -11,8 +11,11 @@ export default function CheckoutPage() {
 	const { items, clearCart, hydrated } = useCart();
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [paymentMethod, setPaymentMethod] = useState<"venmo" | "cash">("venmo");
+	const orderPlacedRef = useRef(false);
 
 	useEffect(() => {
+		if (orderPlacedRef.current) return;
 		if (hydrated && items.length === 0) {
 			router.replace("/");
 		}
@@ -49,6 +52,7 @@ export default function CheckoutPage() {
 			setError("Order created but received invalid response. Please contact the bakery.");
 			return;
 		}
+		orderPlacedRef.current = true;
 		clearCart();
 		router.push(`/orders/${json.id}`);
 	}
@@ -59,14 +63,16 @@ export default function CheckoutPage() {
 
 			<div className="grid gap-6">
 				<section className="card-warm p-6 sm:p-8">
-					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Contact</h2>
-					<CheckoutForm onSubmit={submit} />
+					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Contact & Payment</h2>
+					<CheckoutForm onSubmit={submit} onPaymentMethodChange={setPaymentMethod} />
 				</section>
 
-				<section className="card-warm p-6 sm:p-8">
-					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Payment</h2>
-					<VenmoTile venmoHandle={process.env.NEXT_PUBLIC_VENMO_HANDLE || "@LittleTownBakes"} />
-				</section>
+				{paymentMethod === "venmo" && (
+					<section className="card-warm p-6 sm:p-8">
+						<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Pay with Venmo</h2>
+						<VenmoTile venmoHandle={process.env.NEXT_PUBLIC_VENMO_HANDLE || "@LittleTownBakes"} />
+					</section>
+				)}
 
 				<section className="card-warm p-6 sm:p-8">
 					<OrderSummary />
@@ -76,7 +82,9 @@ export default function CheckoutPage() {
 						</p>
 					)}
 					<p className="mt-4 text-sm text-sage">
-						After you pay via Venmo, we&apos;ll confirm and update your order status.
+						{paymentMethod === "venmo"
+							? "After you pay via Venmo, we'll confirm and update your order status."
+							: "Pay with cash when you pick up your order."}
 					</p>
 					<button
 						type="submit"
@@ -84,7 +92,7 @@ export default function CheckoutPage() {
 						disabled={submitting || !items.length}
 						className="btn-primary mt-4"
 					>
-						{submitting ? "Submitting..." : "Place Order (Venmo)"}
+						{submitting ? "Submitting..." : "Place Order"}
 					</button>
 				</section>
 			</div>

@@ -16,7 +16,8 @@ export type OrderRecord = {
         name: string;
         email: string;
         phone?: string;
-        notes: string;
+        notes?: string;
+        paymentMethod?: "venmo" | "cash";
         venmoUser?: string;
         venmoNote?: string;
     };

@@ -1,21 +1,40 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export type CheckoutData = {
 	name: string;
 	email: string;
 	phone?: string;
 	notes?: string;
+	paymentMethod: "venmo" | "cash";
 	venmoUser?: string;
 	venmoNote?: string;
 };
 
-export default function CheckoutForm({ onSubmit }: { onSubmit: (data: CheckoutData) => void }) {
-	const [form, setForm] = useState<CheckoutData>({ name: "", email: "" });
-	const isValid = useMemo(
-		() => form.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()),
-		[form]
-	);
+type Props = {
+	onSubmit: (data: CheckoutData) => void;
+	onPaymentMethodChange?: (method: "venmo" | "cash") => void;
+};
+
+export default function CheckoutForm({ onSubmit, onPaymentMethodChange }: Props) {
+	const [form, setForm] = useState<CheckoutData>({
+		name: "",
+		email: "",
+		paymentMethod: "venmo",
+	});
+
+	useEffect(() => {
+		onPaymentMethodChange?.(form.paymentMethod);
+	}, [form.paymentMethod, onPaymentMethodChange]);
+
+	const isValid = useMemo(() => {
+		const contactValid =
+			form.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+		const venmoValid =
+			form.paymentMethod === "cash" ||
+			(form.venmoUser?.trim() ?? "").length > 0;
+		return contactValid && venmoValid;
+	}, [form]);
 
 	return (
 		<form
@@ -63,33 +82,57 @@ export default function CheckoutForm({ onSubmit }: { onSubmit: (data: CheckoutDa
 					className="input-base min-h-20 resize-y"
 				/>
 			</label>
-			<details className="group">
-				<summary className="cursor-pointer text-sm font-medium text-cocoa hover:text-honey">
-					Venmo details (optional)
-				</summary>
-				<div className="mt-4 grid gap-4">
+
+			<fieldset className="space-y-3">
+				<legend className="mb-2 text-sm font-medium text-cocoa">Payment method *</legend>
+				<div className="flex gap-6">
+					<label className="flex cursor-pointer items-center gap-2">
+						<input
+							type="radio"
+							name="paymentMethod"
+							value="venmo"
+							checked={form.paymentMethod === "venmo"}
+							onChange={() => setForm((s) => ({ ...s, paymentMethod: "venmo" }))}
+							className="h-4 w-4 accent-honey"
+						/>
+						<span className="text-cocoa">Venmo</span>
+					</label>
+					<label className="flex cursor-pointer items-center gap-2">
+						<input
+							type="radio"
+							name="paymentMethod"
+							value="cash"
+							checked={form.paymentMethod === "cash"}
+							onChange={() => setForm((s) => ({ ...s, paymentMethod: "cash" }))}
+							className="h-4 w-4 accent-honey"
+						/>
+						<span className="text-cocoa">Cash</span>
+					</label>
+				</div>
+			</fieldset>
+
+			{form.paymentMethod === "venmo" && (
+				<div className="grid gap-4 rounded-lg border border-crust bg-wheat/50 p-4">
 					<label>
-						<div className="mb-1.5 text-sm font-medium text-cocoa">Your Venmo @username</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Your Venmo @username *</div>
 						<input
 							value={form.venmoUser ?? ""}
 							onChange={(e) => setForm((s) => ({ ...s, venmoUser: e.target.value }))}
+							placeholder="@username"
 							className="input-base"
 						/>
 					</label>
 					<label>
-						<div className="mb-1.5 text-sm font-medium text-cocoa">Payment note</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Payment note (optional)</div>
 						<input
 							value={form.venmoNote ?? ""}
 							onChange={(e) => setForm((s) => ({ ...s, venmoNote: e.target.value }))}
+							placeholder="Order # or item description"
 							className="input-base"
 						/>
 					</label>
 				</div>
-			</details>
-
-			<button type="submit" disabled={!isValid} className="btn-primary mt-2">
-				Continue
-			</button>
+			)}
 		</form>
 	);
 }
