@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 function requireAdmin(req: NextRequest): NextResponse | null {
-	const key = req.headers.get("x-admin-key");
-	if (key !== process.env.ADMIN_KEY) return new NextResponse("Unauthorized", { status: 401 });
+	const key = (req.headers.get("x-admin-key") ?? "").trim();
+	const expectedKey = (process.env.ADMIN_KEY ?? "").trim();
+	if (!expectedKey || key !== expectedKey) return new NextResponse("Unauthorized", { status: 401 });
 	return null;
 }
 
