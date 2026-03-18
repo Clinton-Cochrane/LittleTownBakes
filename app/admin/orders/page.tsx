@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
 
 const STATUS_OPTIONS: OrderStatus[] = [
+	"AWAITING_PAYMENT",
 	"PAID",
 	"IN_PROGRESS",
 	"READY_FOR_PICKUP",
@@ -14,11 +15,24 @@ const STATUS_OPTIONS: OrderStatus[] = [
 
 export default function AdminOrders() {
 	const [orders, setOrders] = useState<OrderRecord[]>([]);
+	const [error, setError] = useState<string | null>(null);
 
 	async function fetchList() {
+		setError(null);
 		const key = sessionStorage.getItem("admin_key") ?? "";
 		const res = await fetch("/api/admin/list", { headers: { "x-admin-key": key } });
-		if (res.ok) setOrders(await res.json());
+		if (!res.ok) {
+			if (res.status === 401) {
+				setError("Session expired. Please log in again.");
+				window.location.href = "/admin/login";
+				return;
+			}
+			const body = await res.json().catch(() => ({}));
+			setError((body as { error?: string }).error ?? `Failed to load orders (${res.status})`);
+			return;
+		}
+		const data = await res.json();
+		setOrders(Array.isArray(data) ? data : []);
 	}
 
 	useEffect(() => {
@@ -39,7 +53,13 @@ export default function AdminOrders() {
 		<main className="mx-auto max-w-4xl px-4 py-6">
 			<h1 className="mb-6 font-display text-2xl font-semibold text-cocoa">Orders</h1>
 
-			{orders.length === 0 ? (
+			{error && (
+				<p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">
+					{error}
+				</p>
+			)}
+
+			{orders.length === 0 && !error ? (
 				<p className="text-sage">No orders yet.</p>
 			) : (
 				<div className="flex flex-col gap-4">
