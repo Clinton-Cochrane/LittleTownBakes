@@ -1,10 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function AdminLogin() {
 	const [key, setKey] = useState("");
-	const router = useRouter();
 	return (
 		<main className="mx-auto max-w-md px-4 py-8">
 			<div className="card-warm p-6 sm:p-8">
@@ -13,8 +11,8 @@ export default function AdminLogin() {
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
-						sessionStorage.setItem("admin_key", key);
-						router.push("/admin/orders");
+						sessionStorage.setItem("admin_key", key.trim());
+						window.location.href = "/admin/orders";
 					}}
 					className="grid gap-4"
 				>

@@ -8,8 +8,16 @@ import type { OrderRecord } from "@/lib/orderTypes";
  * merged with payload (customer, items, totals).
  */
 export async function GET(req: NextRequest) {
-	const adminKey = req.headers.get("x-admin-key");
-	if (adminKey !== process.env.ADMIN_KEY) {
+	const adminKey = req.headers.get("x-admin-key")?.trim() ?? "";
+	const expectedKey = process.env.ADMIN_KEY ?? "";
+
+	if (!expectedKey) {
+		return NextResponse.json(
+			{ error: "ADMIN_KEY not configured. Add it to .env.local" },
+			{ status: 500 }
+		);
+	}
+	if (adminKey !== expectedKey) {
 		return new NextResponse("Unauthorized", { status: 401 });
 	}
 
