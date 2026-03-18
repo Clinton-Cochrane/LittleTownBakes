@@ -19,8 +19,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 						<Link href="/admin/orders" className="text-cocoa transition-colors hover:text-honey hover:underline">
 							Orders
 						</Link>
-						<Link href="/admin/inventory" className="text-cocoa transition-colors hover:text-honey hover:underline">
-							Inventory
+						<Link href="/admin/availability" className="text-cocoa transition-colors hover:text-honey hover:underline">
+							Availability
 						</Link>
 						<Link href="/admin/flavor-requests" className="text-cocoa transition-colors hover:text-honey hover:underline">
 							Flavor Requests

@@ -52,9 +52,9 @@ supabase db push
 
 This runs all migrations in order automatically.
 
-### 1.3 Seed Initial Inventory (Optional)
+### 1.3 Seed Initial Availability (Optional)
 
-After migrations, you may want to add inventory slots. Use the SQL Editor:
+After migrations, you may want to add availability slots (how many of each product can be ordered per week/month). Use the SQL Editor:
 
 ```sql
 -- Example: Add 10 cakepops available for the current week
@@ -107,7 +107,7 @@ Or push a new commit to trigger a fresh deployment with the new variables.
 
 - [ ] **Health check:** Visit `https://your-app.vercel.app/api/health` — should return OK
 - [ ] **Checkout:** Place a test order and confirm it appears in Supabase → Table Editor → `orders`
-- [ ] **Admin:** Log in at `/admin/login` and verify inventory/orders load
+- [ ] **Admin:** Log in at `/admin/login` and verify availability and orders load
 - [ ] **Flavor requests:** Submit a test request and confirm it appears in `flavor_requests`
 - [ ] **Content:** Fill out `public/about.json` per `CONTENT_ABOUT.md`
 - [ ] **Venmo QR:** Add `venmo-qr.png` to `public/` for the checkout Venmo tile
@@ -124,7 +124,7 @@ Or push a new commit to trigger a fresh deployment with the new variables.
 
 ### Orders fail with "Item X: only 0 available"
 
-- Add inventory slots in Supabase for the current week/month
+- Add availability slots in Supabase for the current week/month (Admin → Availability)
 - Ensure `item_id` in `inventory_slots` matches `id` in `public/menu.json`
 
 ### Admin routes return 401

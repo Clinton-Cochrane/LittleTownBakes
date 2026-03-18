@@ -35,7 +35,7 @@ Edit `public/menu.json` to add/remove items. Set `isArchived: true` to move item
 
 Edit `public/about.json` for the About page (story, how to order, contact). See `CONTENT_ABOUT.md` for prompts and field descriptions.
 
-**Admin:** `/admin` redirects to `/admin/login`. After login, access orders, inventory, and flavor requests.
+**Admin:** `/admin` redirects to `/admin/login`. After login, access orders, availability (menu availability per period), and flavor requests.
 
 ## Deployment
 
