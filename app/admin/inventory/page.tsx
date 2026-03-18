@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import type { InventorySlot } from "@/lib/inventory";
 import { getWeekStart, getMonthStart } from "@/lib/inventory";
 
@@ -29,11 +28,16 @@ export default function AdminInventoryPage() {
 		Promise.all([
 			fetch("/api/admin/inventory", { headers }).then((r) => r.json()),
 			fetch("/api/menu").then((r) => r.json()),
-		]).then(([slotsData, menuData]) => {
-			setSlots(Array.isArray(slotsData) ? slotsData : []);
-			const items = (menuData?.items ?? []).map((i: { id: string; name: string }) => ({ id: i.id, name: i.name }));
-			setMenuItems(items);
-		}).finally(() => setLoading(false));
+		])
+			.then(([slotsData, menuData]) => {
+				setSlots(Array.isArray(slotsData) ? slotsData : []);
+				const items = (menuData?.items ?? []).map((i: { id: string; name: string }) => ({
+					id: i.id,
+					name: i.name,
+				}));
+				setMenuItems(items);
+			})
+			.finally(() => setLoading(false));
 	}, []);
 
 	async function handleSubmit(e: React.FormEvent) {
@@ -50,7 +54,10 @@ export default function AdminInventoryPage() {
 			const data = await res.json();
 			setSlots((prev) => {
 				const idx = prev.findIndex(
-					(s) => s.item_id === data.item_id && s.period_type === data.period_type && s.period_start === data.period_start
+					(s) =>
+						s.item_id === data.item_id &&
+						s.period_type === data.period_type &&
+						s.period_start === data.period_start
 				);
 				if (idx >= 0) {
 					const next = [...prev];
@@ -59,7 +66,12 @@ export default function AdminInventoryPage() {
 				}
 				return [data, ...prev];
 			});
-			setForm({ item_id: "", period_type: "week", period_start: getWeekStart(now), quantity_available: 0 });
+			setForm({
+				item_id: "",
+				period_type: "week",
+				period_start: getWeekStart(now),
+				quantity_available: 0,
+			});
 		}
 	}
 
@@ -68,36 +80,26 @@ export default function AdminInventoryPage() {
 
 	if (loading) {
 		return (
-			<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-				<p>Loading...</p>
+			<main className="mx-auto max-w-3xl px-4 py-6">
+				<p className="text-sage">Loading...</p>
 			</main>
 		);
 	}
 
 	return (
-		<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-				<h1>Inventory</h1>
-				<div style={{ display: "flex", gap: 12 }}>
-					<Link href="/admin/orders" style={{ color: "#111827" }}>
-						Orders
-					</Link>
-					<Link href="/admin/flavor-requests" style={{ color: "#111827" }}>
-						Flavor Requests
-					</Link>
-				</div>
-			</div>
+		<main className="mx-auto max-w-3xl px-4 py-6">
+			<h1 className="mb-6 font-display text-2xl font-semibold text-cocoa">Inventory</h1>
 
-			<section style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-				<h2 style={{ marginBottom: 12 }}>Add or update slot</h2>
-				<form onSubmit={handleSubmit} style={{ display: "grid", gap: 8, maxWidth: 400 }}>
+			<section className="card-warm mb-8 p-6 sm:p-8">
+				<h2 className="mb-4 font-display text-lg font-semibold text-cocoa">Add or update slot</h2>
+				<form onSubmit={handleSubmit} className="grid max-w-md gap-4">
 					<label>
-						<div style={{ marginBottom: 4 }}>Item</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Item</div>
 						<select
 							value={form.item_id}
 							onChange={(e) => setForm((f) => ({ ...f, item_id: e.target.value }))}
 							required
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+							className="input-base"
 						>
 							<option value="">Select item</option>
 							{menuItems.map((i) => (
@@ -108,7 +110,7 @@ export default function AdminInventoryPage() {
 						</select>
 					</label>
 					<label>
-						<div style={{ marginBottom: 4 }}>Period type</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Period type</div>
 						<select
 							value={form.period_type}
 							onChange={(e) =>
@@ -118,37 +120,39 @@ export default function AdminInventoryPage() {
 									period_start: e.target.value === "week" ? weekStart : monthStart,
 								}))
 							}
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+							className="input-base"
 						>
 							<option value="week">Week</option>
 							<option value="month">Month</option>
 						</select>
 					</label>
 					<label>
-						<div style={{ marginBottom: 4 }}>Period start (YYYY-MM-DD)</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Period start (YYYY-MM-DD)</div>
 						<input
 							type="date"
 							value={form.period_start}
 							onChange={(e) => setForm((f) => ({ ...f, period_start: e.target.value }))}
 							required
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+							className="input-base"
 						/>
 					</label>
 					<label>
-						<div style={{ marginBottom: 4 }}>Quantity available</div>
+						<div className="mb-1.5 text-sm font-medium text-cocoa">Quantity available</div>
 						<input
 							type="number"
 							min={0}
 							value={form.quantity_available || ""}
-							onChange={(e) => setForm((f) => ({ ...f, quantity_available: Number(e.target.value) || 0 }))}
+							onChange={(e) =>
+								setForm((f) => ({ ...f, quantity_available: Number(e.target.value) || 0 }))
+							}
 							required
-							style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e5e7eb" }}
+							className="input-base"
 						/>
 					</label>
 					<button
 						type="submit"
 						disabled={saving || !form.item_id || !form.period_start}
-						style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #111827", background: "#111827", color: "#fff" }}
+						className="btn-primary"
 					>
 						{saving ? "Saving..." : "Save"}
 					</button>
@@ -156,30 +160,24 @@ export default function AdminInventoryPage() {
 			</section>
 
 			<section>
-				<h2 style={{ marginBottom: 12 }}>Current slots</h2>
+				<h2 className="mb-4 font-display text-lg font-semibold text-cocoa">Current slots</h2>
 				{slots.length === 0 ? (
-					<p style={{ color: "#6b7280" }}>No inventory slots yet. Add one above.</p>
+					<p className="text-sage">No inventory slots yet. Add one above.</p>
 				) : (
-					<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+					<div className="flex flex-col gap-3">
 						{slots.map((s) => (
 							<div
 								key={s.id}
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr auto auto auto",
-									gap: 12,
-									alignItems: "center",
-									padding: 12,
-									border: "1px solid #e5e7eb",
-									borderRadius: 8,
-								}}
+								className="card-warm grid grid-cols-1 gap-3 p-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"
 							>
 								<span>
-									<strong>{menuItems.find((m) => m.id === s.item_id)?.name ?? s.item_id}</strong>
+									<strong className="text-cocoa">
+										{menuItems.find((m) => m.id === s.item_id)?.name ?? s.item_id}
+									</strong>
 								</span>
-								<span>{s.period_type}</span>
-								<span>{s.period_start}</span>
-								<span>
+								<span className="text-sage">{s.period_type}</span>
+								<span className="text-sage">{s.period_start}</span>
+								<span className="text-cocoa">
 									{s.quantity_sold} / {s.quantity_available} sold
 								</span>
 							</div>

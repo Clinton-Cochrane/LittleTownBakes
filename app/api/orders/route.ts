@@ -2,10 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OrderRecord } from "@/lib/orderTypes";
 import { notifyNewOrder } from "@/lib/notify";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { validateOrderPayload } from "@/lib/orderValidation";
 
 export async function POST(req: NextRequest) {
+	const rateLimitResponse = checkRateLimit(req);
+	if (rateLimitResponse) return rateLimitResponse;
+
 	try {
-		const body = (await req.json()) as Pick<OrderRecord, "customer" | "items" | "totals">;
+		let body: unknown;
+		try {
+			body = await req.json();
+		} catch {
+			return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+		}
+
+		const validation = validateOrderPayload(body);
+		if (!validation.ok) {
+			return NextResponse.json({ error: validation.error }, { status: 400 });
+		}
+
+		const { data: orderData } = validation;
 		const id = `ord_${Date.now().toString(36)}`;
 		const supabase = getSupabaseAdmin();
 
@@ -16,14 +33,14 @@ export async function POST(req: NextRequest) {
 			id,
 			createdAt: new Date().toISOString(),
 			status: "AWAITING_PAYMENT",
-			customer: body.customer,
-			items: body.items,
-			totals: body.totals,
+			customer: orderData.customer,
+			items: orderData.items,
+			totals: orderData.totals,
 		};
 
 		if (hasInventory) {
 			// Atomic: reserve inventory + insert order in one transaction. Prevents overselling.
-			const itemsPayload = body.items.map((i) => ({ id: i.id, qty: i.qty }));
+			const itemsPayload = orderData.items.map((i) => ({ id: i.id, qty: i.qty }));
 			const { error } = await supabase.rpc("create_order_with_reserve", {
 				p_order_id: id,
 				p_payload: order,

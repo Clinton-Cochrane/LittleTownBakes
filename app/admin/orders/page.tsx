@@ -1,46 +1,85 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
 
-export default function AdminOrders(){
-    const [orders, setOrders] = useState<OrderRecord[]>([]);
-    async function fetchList() {
-        const key = sessionStorage.getItem("admin_key") ?? "";
-        const res = await fetch ("/api/admin/list", {headers:{"x-admin-key": key}});
-        if (res.ok) setOrders(await res.json());
-    }
-    useEffect(()=> {fetchList();}, []);
+const STATUS_OPTIONS: OrderStatus[] = [
+	"PAID",
+	"IN_PROGRESS",
+	"READY_FOR_PICKUP",
+	"COMPLETED",
+	"CANCELED",
+];
 
-    async function setStatus (id:string, status: OrderStatus){
-        const key = sessionStorage.getItem("admin_key") ?? "";
-        await fetch (`/api/orders/${id}/status`, {
-            method: "POST",
-            headers: {"Content-Type":"application/json", "x-admin-key": key},
-            body: JSON.stringify({status}),
-        });
-        fetchList();
-    }
+export default function AdminOrders() {
+	const [orders, setOrders] = useState<OrderRecord[]>([]);
 
-    return (
-        <main style={{maxWidth:960, margin:"0 auto", padding: 16}}>
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-                <h1>Orders</h1>
-                <div style={{display:"flex", gap:12}}>
-                    <a href="/admin/inventory" style={{color:"#111827"}}>Inventory</a>
-                    <a href="/admin/flavor-requests" style={{color:"#111827"}}>Flavor Requests</a>
-                </div>
-            </div>
-            {orders.map(o => (
-                <div key={o.id} style={{border:"1px solid #e537eb", borderRadius:12, padding:12, marginTop: 8}}>
-                    <div><strong>#{o.id}</strong> - {o.customer.name} - {o.status}</div>
-                    <div style={{display:"flex", gap:8, marginTop:8, flexWrap:"wrap"}}>
-                        {["PAID", "IN_PROGRESS", "READY_FOR_PICKUP", "COMPLETED", "CANCELED"].map(s=> (
-                            <button key={s} onClick={() =>setStatus(o.id, s as OrderStatus)}>{s}</button>
-                        ))}
-                    </div>
-                </div>
-            ))}
-        </main>
-    );
+	async function fetchList() {
+		const key = sessionStorage.getItem("admin_key") ?? "";
+		const res = await fetch("/api/admin/list", { headers: { "x-admin-key": key } });
+		if (res.ok) setOrders(await res.json());
+	}
+
+	useEffect(() => {
+		fetchList();
+	}, []);
+
+	async function setStatus(id: string, status: OrderStatus) {
+		const key = sessionStorage.getItem("admin_key") ?? "";
+		await fetch(`/api/orders/${id}/status`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "x-admin-key": key },
+			body: JSON.stringify({ status }),
+		});
+		fetchList();
+	}
+
+	return (
+		<main className="mx-auto max-w-4xl px-4 py-6">
+			<h1 className="mb-6 font-display text-2xl font-semibold text-cocoa">Orders</h1>
+
+			{orders.length === 0 ? (
+				<p className="text-sage">No orders yet.</p>
+			) : (
+				<div className="flex flex-col gap-4">
+					{orders.map((o) => (
+						<div key={o.id} className="card-warm p-4 sm:p-6">
+							<div className="flex flex-wrap items-baseline justify-between gap-2">
+								<div>
+									<strong className="text-cocoa">#{o.id}</strong>
+									<span className="mx-2 text-sage">—</span>
+									<span className="text-cocoa">{o.customer.name}</span>
+									<span className="ml-2 rounded-full bg-crust px-2 py-0.5 text-xs font-medium text-caramel">
+										{o.status}
+									</span>
+								</div>
+								<Link
+									href={`/orders/${o.id}`}
+									className="text-sm text-honey hover:underline"
+								>
+									View order
+								</Link>
+							</div>
+							<div className="mt-4 flex flex-wrap gap-2">
+								{STATUS_OPTIONS.map((s) => (
+									<button
+										key={s}
+										onClick={() => setStatus(o.id, s)}
+										className={`rounded-button px-3 py-1.5 text-sm font-medium transition-colors ${
+											o.status === s
+												? "border border-caramel bg-honey text-white"
+												: "btn-secondary"
+										}`}
+									>
+										{s.replace(/_/g, " ")}
+									</button>
+								))}
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+		</main>
+	);
 }

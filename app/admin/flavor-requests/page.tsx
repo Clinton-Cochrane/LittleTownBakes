@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 type FlavorRequest = {
 	id: string;
@@ -12,6 +11,8 @@ type FlavorRequest = {
 	status: string;
 	created_at: string;
 };
+
+const STATUS_OPTIONS = ["pending", "notified", "ignored"] as const;
 
 export default function AdminFlavorRequestsPage() {
 	const [requests, setRequests] = useState<FlavorRequest[]>([]);
@@ -44,61 +45,44 @@ export default function AdminFlavorRequestsPage() {
 
 	if (loading) {
 		return (
-			<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-				<p>Loading...</p>
+			<main className="mx-auto max-w-3xl px-4 py-6">
+				<p className="text-sage">Loading...</p>
 			</main>
 		);
 	}
 
 	return (
-		<main style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-				<h1>Flavor Requests</h1>
-				<div style={{ display: "flex", gap: 8 }}>
-					<Link href="/admin/orders" style={{ color: "#111827" }}>
-						Orders
-					</Link>
-					<Link href="/admin/inventory" style={{ color: "#111827" }}>
-						Inventory
-					</Link>
-				</div>
-			</div>
+		<main className="mx-auto max-w-3xl px-4 py-6">
+			<h1 className="mb-6 font-display text-2xl font-semibold text-cocoa">Flavor Requests</h1>
 
 			{requests.length === 0 ? (
-				<p style={{ color: "#6b7280" }}>No flavor requests yet.</p>
+				<p className="text-sage">No flavor requests yet.</p>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+				<div className="flex flex-col gap-4">
 					{requests.map((r) => (
-						<div
-							key={r.id}
-							style={{
-								padding: 12,
-								border: "1px solid #e5e7eb",
-								borderRadius: 8,
-								display: "flex",
-								flexDirection: "column",
-								gap: 8,
-							}}
-						>
+						<div key={r.id} className="card-warm p-4 sm:p-6">
 							<div>
-								<strong>{r.item_id}</strong> — {r.customer_email}
-								{r.customer_name && ` (${r.customer_name})`}
+								<strong className="text-cocoa">{r.item_id}</strong>
+								<span className="mx-2 text-sage">—</span>
+								<span className="text-cocoa">{r.customer_email}</span>
+								{r.customer_name && (
+									<span className="text-sage"> ({r.customer_name})</span>
+								)}
 							</div>
-							{r.notes && <div style={{ color: "#6b7280", fontSize: 14 }}>{r.notes}</div>}
-							<div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-								<span style={{ fontSize: 12, color: "#6b7280" }}>Status: {r.status}</span>
-								{["pending", "notified", "ignored"].map((s) => (
+							{r.notes && (
+								<div className="mt-2 text-sm text-sage">{r.notes}</div>
+							)}
+							<div className="mt-4 flex flex-wrap items-center gap-2">
+								<span className="text-xs text-sage">Status: {r.status}</span>
+								{STATUS_OPTIONS.map((s) => (
 									<button
 										key={s}
 										onClick={() => setStatus(r.id, s)}
-										style={{
-											padding: "4px 8px",
-											fontSize: 12,
-											borderRadius: 4,
-											border: "1px solid #e5e7eb",
-											background: r.status === s ? "#111827" : "#fff",
-											color: r.status === s ? "#fff" : "#111827",
-										}}
+										className={`rounded-button px-3 py-1.5 text-sm font-medium transition-colors ${
+											r.status === s
+												? "border border-caramel bg-honey text-white"
+												: "btn-secondary"
+										}`}
 									>
 										{s}
 									</button>
