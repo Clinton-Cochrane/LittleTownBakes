@@ -9,7 +9,7 @@ import type { OrderRecord } from "@/lib/orderTypes";
  */
 export async function GET(req: NextRequest) {
 	const adminKey = req.headers.get("x-admin-key")?.trim() ?? "";
-	const expectedKey = process.env.ADMIN_KEY ?? "";
+	const expectedKey = (process.env.ADMIN_KEY ?? "").trim();
 
 	if (!expectedKey) {
 		return NextResponse.json(
