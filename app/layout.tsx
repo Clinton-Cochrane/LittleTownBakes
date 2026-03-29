@@ -9,7 +9,7 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>
-			<body className="min-h-screen bg-cream text-cocoa font-body antialiased">
+			<body className="min-h-screen bg-gradient-to-b from-parchment via-cream to-peach-mist/40 text-cocoa font-body antialiased">
 				<CartProvider>
 					<Header />
 					<main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">{children}</main>

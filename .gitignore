@@ -39,6 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-TODO.md
 
+# Personal notes (not shared — add locally if you want them)
 TODO.md
+PRODUCTION_SETUP.md

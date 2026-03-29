@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-	/* Warm bakery palette */
-	--color-cream: #faf6f1;
-	--color-wheat: #f5e6d3;
-	--color-honey: #d4a574;
-	--color-caramel: #8b6914;
-	--color-cocoa: #5b3b2a;
-	--color-crust: #e8dcc8;
-	--color-berry: #c45c7a;
-	--color-sage: #9ca882;
-	--color-success: #7a9b6e;
+	/* Warm bakery palette — less stark white, more paper & honey */
+	--color-cream: #f2ebe3;
+	--color-wheat: #ead9c4;
+	--color-parchment: #e8dfd4;
+	--color-peach-mist: #f0e4db;
+	--color-honey: #c9956a;
+	--color-caramel: #7a5a12;
+	--color-cocoa: #4a3226;
+	--color-crust: #dccbb4;
+	--color-berry: #b84d6b;
+	--color-sage: #8a9b72;
+	--color-success: #6d8f62;
 
 	/* Typography - use next/font variables with fallbacks */
 	--font-display: var(--font-fraunces, "Fraunces", "Georgia", serif);
@@ -25,7 +27,7 @@
 
 @layer base {
 	body {
-		@apply min-h-screen bg-cream text-cocoa font-body antialiased;
+		@apply min-h-screen text-cocoa font-body antialiased;
 	}
 
 	a {

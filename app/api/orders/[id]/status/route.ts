@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
 import { notifyStatusChange } from "@/lib/notify";
+import { isValidOrderStatusTransition } from "@/lib/orderStatusFlow";
 
 export async function POST(
 	req: NextRequest,
@@ -25,7 +26,17 @@ export async function POST(
 
 	if (error || !data) return new NextResponse("Not found", { status: 404 });
 
-	const updated: OrderRecord = { ...data.payload, status };
+	const previous = data.payload as OrderRecord;
+	if (previous.status !== status && !isValidOrderStatusTransition(previous.status, status)) {
+		return NextResponse.json(
+			{
+				error: `Invalid status change: ${previous.status} → ${status}. Follow the order workflow (e.g. paid before in progress, in progress before completed).`,
+			},
+			{ status: 400 }
+		);
+	}
+
+	const updated: OrderRecord = { ...previous, status };
 
 	const { error: upErr } = await supabase
 		.from("orders")

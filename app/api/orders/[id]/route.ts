@@ -7,8 +7,15 @@ export async function GET(
 ) {
 	const { id } = await context.params;
 
-	// TEMP: if Supabase isn't configured, return fake data
-	if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+	const supabaseConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim());
+	if (!supabaseConfigured) {
+		// Local dev without .env: fake order so pages can be exercised. Production must never serve mock orders.
+		if (process.env.NODE_ENV === "production") {
+			return NextResponse.json(
+				{ error: "Order lookup is not configured (missing NEXT_PUBLIC_SUPABASE_URL)." },
+				{ status: 503 }
+			);
+		}
 		return NextResponse.json({
 			id,
 			status: "MOCK",

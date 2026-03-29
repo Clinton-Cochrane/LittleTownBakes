@@ -8,15 +8,24 @@ import { formatCurrency } from "@/lib/menuCatalog";
 export default function OrderPage() {
 	const { id } = useParams<{ id: string }>();
 	const [order, setOrder] = useState<OrderRecord | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let t: number;
 		async function poll() {
 			const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
 			if (res.ok) {
+				setLoadError(null);
 				const o: OrderRecord = await res.json();
 				setOrder(o);
 				if (["READY_FOR_PICKUP", "COMPLETED", "CANCELED"].includes(o.status)) return;
+			} else if (res.status === 404 || res.status === 503) {
+				const body = await res.json().catch(() => ({}));
+				setLoadError(
+					(body as { error?: string }).error ??
+						(res.status === 404 ? "We couldn’t find this order." : "Order lookup is temporarily unavailable.")
+				);
+				return;
 			}
 			t = window.setTimeout(poll, 15000);
 		}
@@ -25,10 +34,19 @@ export default function OrderPage() {
 	}, [id]);
 
 	const subtotal = useMemo(() => order?.items.reduce((s, i) => s + i.price * i.qty, 0) ?? 0, [order]);
+	if (loadError) {
+		return (
+			<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+				<p className="rounded-lg bg-berry/10 px-4 py-3 text-cocoa" role="alert">
+					{loadError}
+				</p>
+			</main>
+		);
+	}
 	if (!order)
 		return (
 			<main className="px-4 py-6">
-				<p className="text-sage">Loading Order...</p>
+				<p className="text-sage">Loading order…</p>
 			</main>
 		);
 

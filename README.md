@@ -16,7 +16,7 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
-| `ADMIN_KEY` | Yes | Shared secret for admin API access |
+| `ADMIN_KEY` | Yes | Shared secret for admin API — sent as header `x-admin-key` (not Bearer) |
 | `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
 
 ## Database
@@ -39,11 +39,14 @@ Edit `public/about.json` for the About page (story, how to order, contact). See 
 
 ## Deployment
 
-- **Vercel**: Connect repo, set env vars, deploy.
-- Health check: `GET /api/health`
+- **Vercel:** Connect the repo, set env vars for **Production** (and Preview if needed), deploy.
+- **Health:** `GET /api/health` — liveness (app up). `GET /api/health?ready=1` — readiness (Supabase + `orders` table); use after deploys or when debugging connection issues.
+- **Personal backlog (optional):** Add `PRODUCTION_SETUP.md` in the repo root if you want a local-only checklist — it is listed in `.gitignore` and is not committed.
 
 ## Scripts
 
 - `npm run dev` – development with Turbopack
 - `npm run build` – production build
 - `npm run start` – production server
+- `npm run test` – Vitest unit tests
+- `npm run lint` – ESLint
