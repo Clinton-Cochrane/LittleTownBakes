@@ -61,7 +61,7 @@ export default function CartLine({ itemId, onRemove }: Props) {
 							setQty(itemId, v);
 						}}
 						aria-label={`Set ${item.name} quantity`}
-						className="input-base w-12 shrink-0 py-1 text-center text-sm"
+						className="input-base w-16 shrink-0 !px-2 py-1 text-center text-sm tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 					/>
 					<button
 						type="button"
