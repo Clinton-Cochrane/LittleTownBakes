@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { InventorySlot } from "@/lib/inventory";
 import { getWeekStart, getMonthStart } from "@/lib/inventory";
 import { stringifyWeekTemplateCsv } from "@/lib/inventoryBulk";
+import { handleAdminAuthFailure } from "@/lib/adminResponse";
 
 /**
  * Admin page for setting menu availability: how many of each product
@@ -24,20 +25,20 @@ export default function AdminAvailabilityPage() {
 	const [bulkMessage, setBulkMessage] = useState<string | null>(null);
 	const [bulkError, setBulkError] = useState<string | null>(null);
 	const [bulkBusy, setBulkBusy] = useState(false);
+	const [pageError, setPageError] = useState<string | null>(null);
 
 	useEffect(() => {
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		if (!key) {
-			window.location.href = "/admin/login";
-			return;
-		}
-		const headers = { "x-admin-key": key };
-
 		Promise.all([
-			fetch("/api/admin/inventory", { headers }).then((r) => r.json()),
+			fetch("/api/admin/inventory"),
 			fetch("/api/menu").then((r) => r.json()),
 		])
-			.then(([slotsData, menuData]) => {
+			.then(async ([slotsResponse, menuData]) => {
+				if (!slotsResponse.ok) {
+					const authError = handleAdminAuthFailure(slotsResponse);
+					setPageError(authError ?? `Failed to load availability (${slotsResponse.status}).`);
+					return;
+				}
+				const slotsData = await slotsResponse.json();
 				setSlots(Array.isArray(slotsData) ? slotsData : []);
 				const items = (menuData?.items ?? []).map((i: { id: string; name: string }) => ({
 					id: i.id,
@@ -47,11 +48,6 @@ export default function AdminAvailabilityPage() {
 			})
 			.finally(() => setLoading(false));
 	}, []);
-
-	function adminHeaders(): HeadersInit {
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		return { "x-admin-key": key };
-	}
 
 	function triggerDownload(blob: Blob, filename: string) {
 		const url = URL.createObjectURL(blob);
@@ -67,10 +63,13 @@ export default function AdminAvailabilityPage() {
 		setBulkMessage(null);
 		setBulkBusy(true);
 		try {
-			const res = await fetch(`/api/admin/inventory/export?format=${format}`, {
-				headers: adminHeaders(),
-			});
+			const res = await fetch(`/api/admin/inventory/export?format=${format}`);
 			if (!res.ok) {
+				const authError = handleAdminAuthFailure(res);
+				if (authError) {
+					setBulkError(authError);
+					return;
+				}
 				const err = await res.json().catch(() => ({}));
 				setBulkError((err as { error?: string }).error ?? `Download failed (${res.status})`);
 				return;
@@ -105,11 +104,6 @@ export default function AdminAvailabilityPage() {
 	async function uploadBulkFile(file: File) {
 		setBulkError(null);
 		setBulkMessage(null);
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		if (!key) {
-			window.location.href = "/admin/login";
-			return;
-		}
 		setBulkBusy(true);
 		try {
 			const text = await file.text();
@@ -117,13 +111,17 @@ export default function AdminAvailabilityPage() {
 			const res = await fetch("/api/admin/inventory/bulk", {
 				method: "POST",
 				headers: {
-					"x-admin-key": key,
 					"Content-Type": isJson ? "application/json" : "text/csv",
 				},
 				body: text,
 			});
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
+				const authError = handleAdminAuthFailure(res);
+				if (authError) {
+					setBulkError(authError);
+					return;
+				}
 				setBulkError((data as { error?: string }).error ?? `Upload failed (${res.status})`);
 				return;
 			}
@@ -140,11 +138,13 @@ export default function AdminAvailabilityPage() {
 					`${errs.length} row(s) failed (${preview}${errs.length > 5 ? "…" : ""}). Successful rows were still saved.`
 				);
 			}
-			const headers = { "x-admin-key": key };
-			const slotsRes = await fetch("/api/admin/inventory", { headers });
+			const slotsRes = await fetch("/api/admin/inventory");
 			if (slotsRes.ok) {
 				const slotsData = await slotsRes.json();
 				setSlots(Array.isArray(slotsData) ? slotsData : []);
+			} else {
+				const authError = handleAdminAuthFailure(slotsRes);
+				if (authError) setBulkError(authError);
 			}
 		} finally {
 			setBulkBusy(false);
@@ -153,11 +153,11 @@ export default function AdminAvailabilityPage() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		const key = sessionStorage.getItem("admin_key") ?? "";
+		setPageError(null);
 		setSaving(true);
 		const res = await fetch("/api/admin/inventory", {
 			method: "POST",
-			headers: { "Content-Type": "application/json", "x-admin-key": key },
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(form),
 		});
 		setSaving(false);
@@ -183,7 +183,10 @@ export default function AdminAvailabilityPage() {
 				period_start: getWeekStart(now),
 				quantity_available: 0,
 			});
+			return;
 		}
+		const authError = handleAdminAuthFailure(res);
+		setPageError(authError ?? `Could not save availability (${res.status}).`);
 	}
 
 	const weekStart = getWeekStart(now);
@@ -203,6 +206,12 @@ export default function AdminAvailabilityPage() {
 			<p className="mb-6 text-sm text-sage">
 				Set how many of each product customers can order per week or month. This prevents overselling.
 			</p>
+
+			{pageError && (
+				<p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">
+					{pageError}
+				</p>
+			)}
 
 			<section className="card-warm mb-8 p-6 sm:p-8">
 				<h2 className="mb-2 font-display text-lg font-semibold text-cocoa">Bulk edit (CSV or JSON)</h2>

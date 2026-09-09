@@ -5,6 +5,7 @@ import {
 	OrdersNavIcon,
 	SettingsNavIcon,
 } from "@/components/icons/navIcons";
+import { LogoutButton } from "@/components/admin/LogoutButton";
 
 /**
  * Admin layout: provides bakery-themed navigation for all admin pages.
@@ -47,12 +48,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 							</Link>
 						</div>
 					</div>
-					<Link
-						href="/"
-						className="text-sm text-caramel/90 transition-colors hover:text-caramel hover:underline"
-					>
-						← Back to site
-					</Link>
+					<div className="flex items-center gap-4">
+						<LogoutButton />
+						<Link
+							href="/"
+							className="text-sm text-caramel/90 transition-colors hover:text-caramel hover:underline"
+						>
+							← Back to site
+						</Link>
+					</div>
 				</div>
 			</nav>
 			{children}

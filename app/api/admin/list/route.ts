@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { AdminOrderRecord, OrderRecord } from "@/lib/orderTypes";
 
@@ -8,18 +9,8 @@ import type { AdminOrderRecord, OrderRecord } from "@/lib/orderTypes";
  * merged with payload (customer, items, totals).
  */
 export async function GET(req: NextRequest) {
-	const adminKey = req.headers.get("x-admin-key")?.trim() ?? "";
-	const expectedKey = (process.env.ADMIN_KEY ?? "").trim();
-
-	if (!expectedKey) {
-		return NextResponse.json(
-			{ error: "ADMIN_KEY not configured. Add it to .env.local" },
-			{ status: 500 }
-		);
-	}
-	if (adminKey !== expectedKey) {
-		return new NextResponse("Unauthorized", { status: 401 });
-	}
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const supabase = getSupabaseAdmin();
 	const statusFilter = req.nextUrl.searchParams.get("status") ?? undefined;

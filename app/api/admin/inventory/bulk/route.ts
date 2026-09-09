@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/admin/inventory/bulk
  *
- * Upserts many slots from CSV or JSON (requires x-admin-key).
+ * Upserts many slots from CSV or JSON (requires an admin session).
  *
  * **CSV:** `Content-Type: text/csv` or `text/plain` — body is CSV text
  * (columns: item_id, period_type, period_start, quantity_available; optional quantity_sold column ignored).
@@ -22,8 +22,8 @@ export const dynamic = "force-dynamic";
  * with the same fields as CSV rows.
  */
 export async function POST(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const type = (req.headers.get("content-type") ?? "").toLowerCase();
 	let rowsResult: BulkRowsParseResult;

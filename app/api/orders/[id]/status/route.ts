@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
 import { notifyStatusChange } from "@/lib/notify";
@@ -8,11 +9,8 @@ export async function POST(
 	req: NextRequest,
 	context: { params: Promise<{ id: string }> }
 ) {
-	const adminKey = (req.headers.get("x-admin-key") ?? "").trim();
-	const expectedKey = (process.env.ADMIN_KEY ?? "").trim();
-	if (!expectedKey || adminKey !== expectedKey) {
-		return new NextResponse("Unauthorized", { status: 401 });
-	}
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const { id } = await context.params;
 	const { status } = (await req.json()) as { status: OrderStatus };

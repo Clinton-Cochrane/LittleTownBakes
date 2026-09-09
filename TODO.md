@@ -15,7 +15,7 @@ Steps to get Little Town Bakes live. See `PRODUCTION_SETUP.md` for detailed inst
 - [ x] **Add Vercel env vars** (Settings → Environment Variables):
   - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role / secret key
-  - `ADMIN_KEY` — strong random string (e.g. `openssl rand -hex 32`)
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable (anon) key for cookie-backed Auth
   - `NEXT_PUBLIC_VENMO_HANDLE` — e.g. `@LittleTownBakes`
 - [x ] **Redeploy** after adding env vars (or push a commit)
 
@@ -37,7 +37,7 @@ Steps to get Little Town Bakes live. See `PRODUCTION_SETUP.md` for detailed inst
 - [ ] **Place a test order** — confirm it appears in Supabase → Table Editor → `orders`
 - [ ] **Admin login** at `/admin/login` — verify orders, inventory, flavor requests load
 - [ ] **Submit a test flavor request** — confirm it appears in `flavor_requests`
-- [ ] **Share `ADMIN_KEY`** with client securely (e.g. password manager) for admin access
+- [ ] **Provision the admin account** — create the bakery owner under Supabase Authentication → Users and assign `app_metadata.role` to `admin` with the server-side Supabase Admin API (see README “Admin provisioning and recovery”). Authorization requires `app_metadata.role === "admin"`; there is no shared admin secret.
 
 ---
 
