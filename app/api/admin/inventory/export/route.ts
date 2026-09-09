@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/inventory/export?format=csv|json
- * Download current inventory_slots for bulk editing (requires x-admin-key).
+ * Download current inventory_slots for bulk editing (requires an admin session).
  */
 export async function GET(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const format = (req.nextUrl.searchParams.get("format") ?? "csv").toLowerCase();
 

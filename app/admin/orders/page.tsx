@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { handleAdminAuthFailure } from "@/lib/adminResponse";
 import type { AdminOrderRecord, OrderStatus } from "@/lib/orderTypes";
 import {
 	getAllowedNextStatuses,
@@ -21,14 +22,10 @@ export default function AdminOrders() {
 
 	async function fetchList() {
 		setError(null);
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		const res = await fetch("/api/admin/list", { headers: { "x-admin-key": key } });
+		const res = await fetch("/api/admin/list");
 		if (!res.ok) {
-			if (res.status === 401) {
-				setError("Session expired. Please log in again.");
-				window.location.href = "/admin/login";
-				return;
-			}
+			const authError = handleAdminAuthFailure(res);
+			if (authError) return setError(authError);
 			const body = await res.json().catch(() => ({}));
 			setError((body as { error?: string }).error ?? `Failed to load orders (${res.status})`);
 			return;
@@ -43,13 +40,14 @@ export default function AdminOrders() {
 
 	async function setStatus(id: string, status: OrderStatus) {
 		setError(null);
-		const key = sessionStorage.getItem("admin_key") ?? "";
 		const res = await fetch(`/api/orders/${id}/status`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json", "x-admin-key": key },
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ status }),
 		});
 		if (!res.ok) {
+			const authError = handleAdminAuthFailure(res);
+			if (authError) return setError(authError);
 			const body = await res.json().catch(() => ({}));
 			setError(
 				(body as { error?: string }).error ??

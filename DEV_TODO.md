@@ -5,9 +5,10 @@
 - [ ] Create a Supabase project (no project configured yet)
 - [ ] Copy `.env.example` to `.env.local` and add:
   - `NEXT_PUBLIC_SUPABASE_URL` (from Project Settings → API)
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (from Project Settings → API)
   - `SUPABASE_SERVICE_ROLE_KEY` (from Project Settings → API)
-  - `ADMIN_KEY` (choose a secure secret)
   - `NEXT_PUBLIC_VENMO_HANDLE` (optional, e.g. @LittleTownBakes)
+- [ ] Create or invite the bakery owner under Authentication → Users and assign `app_metadata.role` to `admin` with the server-side Supabase Admin API (see README).
 - [ ] Run migrations in order (Supabase SQL Editor or CLI):
   1. `supabase/migrations/20250313000000_create_inventory_slots.sql`
   2. `supabase/migrations/20250313000001_create_flavor_requests.sql`

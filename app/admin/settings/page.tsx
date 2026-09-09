@@ -1,19 +1,8 @@
-"use client";
-
-import { useEffect } from "react";
-
 /**
  * Placeholder for shop-wide configuration (payment display, email templates, notifications, etc.).
  * Forms and persistence will be added after requirements are finalized with the client.
  */
 export default function AdminSettingsPage() {
-	useEffect(() => {
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		if (!key) {
-			window.location.href = "/admin/login";
-		}
-	}, []);
-
 	return (
 		<main className="mx-auto max-w-4xl px-4 py-6">
 			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Settings</h1>

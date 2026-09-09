@@ -1,13 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockEqForSelect, mockEqForUpdate, mockFrom, mockUpdate } = vi.hoisted(() => ({
+const { mockEqForSelect, mockEqForUpdate, mockFrom, mockRequireAdmin, mockUpdate } = vi.hoisted(() => ({
 	mockEqForSelect: vi.fn(),
 	mockEqForUpdate: vi.fn(),
 	mockFrom: vi.fn(),
+	mockRequireAdmin: vi.fn(),
 	mockUpdate: vi.fn(),
 }));
 
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/supabaseAdmin", () => ({
 	getSupabaseAdmin: () => ({ from: mockFrom }),
 }));
@@ -16,11 +18,12 @@ vi.mock("@/lib/notify", () => ({ notifyStatusChange: vi.fn().mockResolvedValue(u
 import { POST } from "./route";
 
 describe("POST /api/orders/[id]/status", () => {
-	const previousAdminKey = process.env.ADMIN_KEY;
-
 	beforeEach(() => {
 		vi.clearAllMocks();
-		process.env.ADMIN_KEY = "test-admin-key";
+		mockRequireAdmin.mockResolvedValue({
+			authorized: true,
+			admin: { id: "admin-1", email: "owner@example.com" },
+		});
 		mockEqForSelect.mockReturnValue({
 			single: vi.fn().mockResolvedValue({
 				data: {
@@ -44,15 +47,11 @@ describe("POST /api/orders/[id]/status", () => {
 		});
 	});
 
-	afterEach(() => {
-		process.env.ADMIN_KEY = previousAdminKey;
-	});
-
 	it("continues updating status by internal order ID", async () => {
 		const response = await POST(
 			new NextRequest("http://localhost/api/orders/ord_internal/status", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", "x-admin-key": "test-admin-key" },
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ status: "PAID" }),
 			}),
 			{ params: Promise.resolve({ id: "ord_internal" }) },

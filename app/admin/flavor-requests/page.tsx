@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChatNavIcon } from "@/components/icons/navIcons";
+import { handleAdminAuthFailure } from "@/lib/adminResponse";
 
 type FlavorRequest = {
 	id: string;
@@ -35,30 +36,41 @@ const STATUS_LABELS: Record<(typeof STATUS_OPTIONS)[number], { title: string; de
 export default function AdminFlavorRequestsPage() {
 	const [requests, setRequests] = useState<FlavorRequest[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		const key = sessionStorage.getItem("admin_key") ?? "";
-		if (!key) {
-			window.location.href = "/admin/login";
-			return;
+		async function loadRequests() {
+			const response = await fetch("/api/admin/flavor-requests");
+			if (!response.ok) {
+				const authError = handleAdminAuthFailure(response);
+				if (authError) setError(authError);
+				else setError(`Failed to load flavor requests (${response.status}).`);
+				setLoading(false);
+				return;
+			}
+			const data = await response.json();
+			setRequests(Array.isArray(data) ? data : []);
+			setLoading(false);
 		}
-		fetch("/api/admin/flavor-requests", { headers: { "x-admin-key": key } })
-			.then((r) => r.json())
-			.then((data) => setRequests(Array.isArray(data) ? data : []))
-			.finally(() => setLoading(false));
+
+		void loadRequests();
 	}, []);
 
 	async function setStatus(id: string, status: string) {
-		const key = sessionStorage.getItem("admin_key") ?? "";
+		setError(null);
 		const res = await fetch("/api/admin/flavor-requests", {
 			method: "PATCH",
-			headers: { "Content-Type": "application/json", "x-admin-key": key },
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ id, status }),
 		});
 		if (res.ok) {
 			const updated = await res.json();
 			setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+			return;
 		}
+		const authError = handleAdminAuthFailure(res);
+		if (authError) setError(authError);
+		else setError(`Could not update flavor request (${res.status}).`);
 	}
 
 	if (loading) {
@@ -77,7 +89,13 @@ export default function AdminFlavorRequestsPage() {
 				<em>you</em> have contacted the customer — the site does not send automatic emails for these yet.
 			</p>
 
-			{requests.length === 0 ? (
+			{error && (
+				<p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">
+					{error}
+				</p>
+			)}
+
+			{requests.length === 0 && !error ? (
 				<p className="text-sage">No flavor requests yet.</p>
 			) : (
 				<div className="flex flex-col gap-5">

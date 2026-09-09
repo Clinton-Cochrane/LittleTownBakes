@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-function requireAdmin(req: NextRequest): NextResponse | null {
-	const key = (req.headers.get("x-admin-key") ?? "").trim();
-	const expectedKey = (process.env.ADMIN_KEY ?? "").trim();
-	if (!expectedKey || key !== expectedKey) return new NextResponse("Unauthorized", { status: 401 });
-	return null;
-}
-
-export async function GET(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+export async function GET() {
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const { data, error } = await supabaseAdmin
 		.from("flavor_requests")
@@ -22,8 +16,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const body = await req.json();
 	const { id, status } = body;

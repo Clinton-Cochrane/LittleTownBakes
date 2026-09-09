@@ -15,8 +15,8 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key used by cookie-backed Auth clients |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
-| `ADMIN_KEY` | Yes | Shared secret for admin API — sent as header `x-admin-key` (not Bearer) |
 | `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
 
 ## Database
@@ -37,7 +37,18 @@ PostgreSQL tables `categories` and `products` are the authoritative catalog. Set
 
 Edit `public/about.json` for the About page (story, how to order, contact). See `CONTENT_ABOUT.md` for prompts and field descriptions.
 
-**Admin:** `/admin` redirects to `/admin/login`. After login, access orders, availability (menu availability per period), and flavor requests.
+**Admin:** `/admin` redirects to the protected admin area. Sign in at `/admin/login` with a Supabase Auth email/password account whose verified `app_metadata.role` is `admin`.
+
+## Admin provisioning and recovery
+
+Admin accounts must be managed through the Supabase Dashboard or trusted server-side tooling. Never run administrative Auth methods or use the service-role key in browser code.
+
+1. In Supabase Dashboard, open **Authentication → Users** and create the initial bakery owner with an email and temporary password. The equivalent trusted server-side method is `supabase.auth.admin.createUser`. Do not add public signup to this application.
+2. Copy the user ID, then use a trusted server-side script with `SUPABASE_SERVICE_ROLE_KEY` and `supabase.auth.admin.updateUserById(userId, { app_metadata: { role: "admin" } })`. Authorization uses `app_metadata`, never user-editable metadata.
+3. Add another admin later with the same Dashboard or server-side create-user process, then assign the same `app_metadata.role` value through the administrative API. Existing admins do not receive account-management UI in this application.
+4. Until a password-reset screen exists, a trusted operator can set a temporary password with `supabase.auth.admin.updateUserById(userId, { password: temporaryPassword })`, communicate it securely, and replace it again on request. Alternatively, add a dedicated recovery callback/update-password UX before issuing recovery links.
+
+The administrative client used for provisioning must remain in server-only tooling. The application keeps caller authentication separate from `lib/supabaseAdmin.ts`, which continues to perform privileged database operations only after the caller passes the server authorization check.
 
 ## Deployment
 

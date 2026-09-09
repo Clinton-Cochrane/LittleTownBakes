@@ -1,11 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockFrom, mockSelect } = vi.hoisted(() => ({
+const { mockFrom, mockRequireAdmin, mockSelect } = vi.hoisted(() => ({
 	mockFrom: vi.fn(),
+	mockRequireAdmin: vi.fn(),
 	mockSelect: vi.fn(),
 }));
 
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/supabaseAdmin", () => ({
 	getSupabaseAdmin: () => ({ from: mockFrom }),
 }));
@@ -13,15 +15,24 @@ vi.mock("@/lib/supabaseAdmin", () => ({
 import { GET } from "./route";
 
 describe("GET /api/admin/list", () => {
-	const previousAdminKey = process.env.ADMIN_KEY;
-
 	beforeEach(() => {
 		vi.clearAllMocks();
-		process.env.ADMIN_KEY = "test-admin-key";
+		mockRequireAdmin.mockResolvedValue({
+			authorized: true,
+			admin: { id: "admin-1", email: "owner@example.com" },
+		});
 	});
 
-	afterEach(() => {
-		process.env.ADMIN_KEY = previousAdminKey;
+	it("does not query the privileged database when authentication fails", async () => {
+		mockRequireAdmin.mockResolvedValue({
+			authorized: false,
+			response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
+		});
+
+		const response = await GET(new NextRequest("http://localhost/api/admin/list"));
+
+		expect(response.status).toBe(401);
+		expect(mockFrom).not.toHaveBeenCalled();
 	});
 
 	it("keeps customer details and provides the tracking token to authenticated admins", async () => {
@@ -48,9 +59,7 @@ describe("GET /api/admin/list", () => {
 		mockSelect.mockReturnValue(query);
 		mockFrom.mockReturnValue({ select: mockSelect });
 
-		const response = await GET(new NextRequest("http://localhost/api/admin/list", {
-			headers: { "x-admin-key": "test-admin-key" },
-		}));
+		const response = await GET(new NextRequest("http://localhost/api/admin/list"));
 		const body = await response.json();
 
 		expect(response.status).toBe(200);

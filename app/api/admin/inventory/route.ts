@@ -3,9 +3,9 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { upsertInventorySlot } from "@/lib/inventoryUpsert";
 
-export async function GET(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+export async function GET() {
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const { data, error } = await supabaseAdmin
 		.from("inventory_slots")
@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-	const err = requireAdmin(req);
-	if (err) return err;
+	const authorization = await requireAdmin();
+	if (!authorization.authorized) return authorization.response;
 
 	const body = await req.json();
 	const { item_id, period_type, period_start, quantity_available } = body;
