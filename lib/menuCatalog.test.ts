@@ -50,6 +50,21 @@ describe("buildSections", () => {
 		expect(sections[1].category.id).toBe("z");
 	});
 
+	it("sorts products by sortOrder, then name", () => {
+		const catalog: MenuCatalog = {
+			categories: [{ id: "a", name: "A", sortOrder: 1 }],
+			items: [
+				{ id: "3", name: "Beta", categoryId: "a", basePrice: 1, sortOrder: 2, availability: { inStock: true } },
+				{ id: "2", name: "Zulu", categoryId: "a", basePrice: 1, sortOrder: 1, availability: { inStock: true } },
+				{ id: "1", name: "Alpha", categoryId: "a", basePrice: 1, sortOrder: 1, availability: { inStock: true } },
+			],
+		};
+
+		const sections = buildSections(catalog);
+
+		expect(sections[0].items.map((item) => item.id)).toEqual(["1", "2", "3"]);
+	});
+
 	it("skips orphan items", () => {
 		const catalog: MenuCatalog = {
 			categories: [{ id: "a", name: "A", sortOrder: 1 }],
