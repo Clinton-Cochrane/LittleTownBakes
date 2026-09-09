@@ -6,17 +6,17 @@ import {
 	validateBulkRow,
 	type BulkRowsParseResult,
 } from "@/lib/inventoryBulk";
-import { upsertInventorySlot } from "@/lib/inventoryUpsert";
+import { setProductInventory } from "@/lib/inventoryUpsert";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/admin/inventory/bulk
  *
- * Upserts many slots from CSV or JSON (requires an admin session).
+ * Sets current on-hand quantities from CSV or JSON (requires an admin session).
  *
  * **CSV:** `Content-Type: text/csv` or `text/plain` — body is CSV text
- * (columns: item_id, period_type, period_start, quantity_available; optional quantity_sold column ignored).
+ * (columns: product_id, quantity_on_hand).
  *
  * **JSON:** `Content-Type: application/json` — either `[{...}, ...]` or `{ "rows": [...] }`
  * with the same fields as CSV rows.
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
 	}
 
 	const errors: { index: number; message: string }[] = [];
-	let created = 0;
 	let updated = 0;
 
 	for (let i = 0; i < rowsResult.rows.length; i++) {
@@ -57,17 +56,15 @@ export async function POST(req: NextRequest) {
 			errors.push({ index: v.index, message: v.message });
 			continue;
 		}
-		const up = await upsertInventorySlot(v.row);
+		const up = await setProductInventory(v.row);
 		if (!up.ok) {
 			errors.push({ index: i, message: up.error });
 			continue;
 		}
-		if (up.created) created++;
-		else updated++;
+		updated++;
 	}
 
 	return NextResponse.json({
-		created,
 		updated,
 		errors,
 		processed: rowsResult.rows.length,

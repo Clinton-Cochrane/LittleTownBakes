@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getWeekStart } from "@/lib/inventory";
 
 const { mockFrom } = vi.hoisted(() => ({
 	mockFrom: vi.fn(),
@@ -78,7 +77,7 @@ function setDatabaseResults({
 		if (table === "products") {
 			return { select: vi.fn().mockResolvedValue(queryResult(productRows, productError)) };
 		}
-		if (table === "inventory_slots") {
+		if (table === "product_inventory") {
 			return { select: vi.fn().mockResolvedValue(queryResult(inventoryRows)) };
 		}
 		throw new Error(`Unexpected table ${table}`);
@@ -93,14 +92,7 @@ describe("GET /api/menu", () => {
 
 	it("maps active database products into the existing API contract", async () => {
 		setDatabaseResults({
-			inventoryRows: [{
-				id: "slot-1",
-				item_id: "chocolate-cake",
-				period_type: "week",
-				period_start: getWeekStart(new Date()),
-				quantity_available: 5,
-				quantity_sold: 1,
-			}],
+			inventoryRows: [{ product_id: "chocolate-cake", quantity_on_hand: 4 }],
 		});
 
 		const response = await GET();
@@ -134,14 +126,7 @@ describe("GET /api/menu", () => {
 
 	it("keeps a zero-stock active product visible but unavailable", async () => {
 		setDatabaseResults({
-			inventoryRows: [{
-				id: "slot-1",
-				item_id: "apple-cake",
-				period_type: "week",
-				period_start: getWeekStart(new Date()),
-				quantity_available: 3,
-				quantity_sold: 3,
-			}],
+			inventoryRows: [{ product_id: "apple-cake", quantity_on_hand: 0 }],
 		});
 
 		const response = await GET();

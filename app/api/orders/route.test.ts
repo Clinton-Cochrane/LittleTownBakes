@@ -1,15 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockFrom, mockInsert, mockInventorySelect, mockRpc } = vi.hoisted(() => ({
-	mockFrom: vi.fn(),
-	mockInsert: vi.fn(),
-	mockInventorySelect: vi.fn(),
-	mockRpc: vi.fn(),
-}));
+const { mockRpc } = vi.hoisted(() => ({ mockRpc: vi.fn() }));
 
 vi.mock("@/lib/supabaseAdmin", () => ({
-	getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
+	getSupabaseAdmin: () => ({ rpc: mockRpc }),
 }));
 vi.mock("@/lib/notify", () => ({ notifyNewOrder: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/rateLimit", () => ({ checkRateLimit: () => null }));
@@ -33,44 +28,30 @@ function orderRequest() {
 describe("POST /api/orders", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockFrom.mockImplementation((table: string) => {
-			if (table === "inventory_slots") return { select: mockInventorySelect };
-			if (table === "orders") return { insert: mockInsert };
-			throw new Error(`Unexpected table ${table}`);
-		});
 		mockRpc.mockResolvedValue({ error: null });
-		mockInsert.mockResolvedValue({ error: null });
 	});
 
-	it("passes a separate tracking token through the atomic inventory RPC", async () => {
-		mockInventorySelect.mockResolvedValue({ data: [{ id: "slot" }] });
-
+	it("always creates through the atomic inventory RPC", async () => {
 		const response = await POST(orderRequest());
 		const body = await response.json();
 		const rpcArgs = mockRpc.mock.calls[0][1];
 
 		expect(response.status).toBe(201);
+		expect(mockRpc).toHaveBeenCalledTimes(1);
 		expect(mockRpc).toHaveBeenCalledWith("create_order_with_reserve", expect.objectContaining({
 			p_order_id: expect.stringMatching(/^ord_/),
 			p_tracking_token: body.trackingToken,
+			p_items: [{ id: "cake", qty: 1 }],
 		}));
-		expect(body).toEqual({ trackingToken: expect.any(String) });
 		expect(rpcArgs.p_tracking_token).not.toBe(rpcArgs.p_order_id);
-		expect(body).not.toHaveProperty("id");
 	});
 
-	it("stores the tracking token on direct inserts when inventory is not configured", async () => {
-		mockInventorySelect.mockResolvedValue({ data: [] });
+	it("fails closed when the reservation RPC rejects the order", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: { message: "Item cake: inventory state is missing" } });
 
 		const response = await POST(orderRequest());
-		const body = await response.json();
 
-		expect(response.status).toBe(201);
-		expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-			id: expect.stringMatching(/^ord_/),
-			tracking_token: body.trackingToken,
-		}));
-		expect(body).toEqual({ trackingToken: expect.any(String) });
-		expect(body).not.toHaveProperty("id");
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Item cake: inventory state is missing" });
 	});
 });
