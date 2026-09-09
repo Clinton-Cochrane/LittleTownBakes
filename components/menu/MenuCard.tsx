@@ -31,10 +31,10 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 				/>
 			</div>
 
-			<div className="flex flex-1 flex-col">
-				<header className="flex items-start justify-between gap-2">
-					<h3 className="font-display text-lg font-semibold text-cocoa">{item.name}</h3>
-					<span aria-label="price" className="font-semibold text-caramel">
+			<div className="flex min-w-0 flex-1 flex-col">
+				<header className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+					<h3 className="min-w-0 flex-1 basis-32 break-words font-display text-lg font-semibold text-cocoa">{item.name}</h3>
+					<span aria-label="price" className="ml-auto shrink-0 font-semibold text-caramel">
 						{formatCurrency(item.basePrice)}
 					</span>
 				</header>
