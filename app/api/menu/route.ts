@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Category, Item } from "@/lib/menuCatalog";
-import {
-	getWeekStart,
-	getMonthStart,
-	getRemaining,
-	findRelevantSlot,
-	type InventorySlot,
-} from "@/lib/inventory";
+import { getQuantityOnHand, type ProductInventory } from "@/lib/inventory";
 
 type CategoryRow = {
 	id: string;
@@ -66,12 +60,12 @@ function mapProduct(row: ProductRow): Item {
 export async function GET() {
 	try {
 		const supabase = getSupabaseAdmin();
-		const [categoriesResult, productsResult, slotsResult] = await Promise.all([
+		const [categoriesResult, productsResult, inventoryResult] = await Promise.all([
 			supabase.from("categories").select("id, name, sort_order"),
 			supabase
 				.from("products")
 				.select("id, category_id, name, description, price_cents, image, max_per_order, is_archived, sort_order"),
-			supabase.from("inventory_slots").select("*"),
+			supabase.from("product_inventory").select("product_id, quantity_on_hand"),
 		]);
 
 		if (categoriesResult.error || productsResult.error) {
@@ -86,20 +80,12 @@ export async function GET() {
 		const catalogItems = ((productsResult.data ?? []) as ProductRow[])
 			.map(mapProduct)
 			.sort(compareCatalogEntries);
-		const inventorySlots = slotsResult.error ? [] : ((slotsResult.data ?? []) as InventorySlot[]);
-		const now = new Date();
-		const weekStart = getWeekStart(now);
-		const monthStart = getMonthStart(now);
-
-		const relevantSlots = inventorySlots.filter(
-			(slot) =>
-				(slot.period_type === "week" && slot.period_start === weekStart) ||
-				(slot.period_type === "month" && slot.period_start === monthStart)
-		);
+		const inventory = inventoryResult.error
+			? []
+			: ((inventoryResult.data ?? []) as ProductInventory[]);
 
 		const enrichedItems = catalogItems.map((item) => {
-			const slot = findRelevantSlot(relevantSlots, item.id, now);
-			const remaining = slot ? getRemaining(slot) : 0;
+			const remaining = getQuantityOnHand(inventory, item.id);
 			const available = remaining > 0;
 
 			return {

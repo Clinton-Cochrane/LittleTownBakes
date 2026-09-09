@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { mockEqForSelect, mockEqForUpdate, mockFrom, mockRequireAdmin, mockUpdate } = vi.hoisted(() => ({
+const { mockEqForSelect, mockEqForUpdate, mockExpectedStatusEq, mockFrom, mockMaybeSingleForUpdate, mockRequireAdmin, mockRpc, mockUpdate } = vi.hoisted(() => ({
 	mockEqForSelect: vi.fn(),
 	mockEqForUpdate: vi.fn(),
+	mockExpectedStatusEq: vi.fn(),
 	mockFrom: vi.fn(),
+	mockMaybeSingleForUpdate: vi.fn(),
 	mockRequireAdmin: vi.fn(),
+	mockRpc: vi.fn(),
 	mockUpdate: vi.fn(),
 }));
 
 vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/supabaseAdmin", () => ({
-	getSupabaseAdmin: () => ({ from: mockFrom }),
+	getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 vi.mock("@/lib/notify", () => ({ notifyStatusChange: vi.fn().mockResolvedValue(undefined) }));
 
@@ -27,6 +30,7 @@ describe("POST /api/orders/[id]/status", () => {
 		mockEqForSelect.mockReturnValue({
 			single: vi.fn().mockResolvedValue({
 				data: {
+					status: "AWAITING_PAYMENT",
 					payload: {
 						id: "ord_internal",
 						createdAt: "2026-09-08T20:00:00.000Z",
@@ -39,12 +43,38 @@ describe("POST /api/orders/[id]/status", () => {
 				error: null,
 			}),
 		});
-		mockEqForUpdate.mockResolvedValue({ error: null });
+		mockMaybeSingleForUpdate.mockResolvedValue({ data: { id: "ord_internal" }, error: null });
+		mockExpectedStatusEq.mockReturnValue({
+			select: vi.fn(() => ({
+				maybeSingle: mockMaybeSingleForUpdate,
+			})),
+		});
+		mockEqForUpdate.mockReturnValue({
+			eq: mockExpectedStatusEq,
+		});
+		mockRpc.mockResolvedValue({ data: { canceled: true, restored: true }, error: null });
 		mockUpdate.mockReturnValue({ eq: mockEqForUpdate });
 		mockFrom.mockReturnValue({
 			select: vi.fn(() => ({ eq: mockEqForSelect })),
 			update: mockUpdate,
 		});
+	});
+
+	it("cancels through the atomic restoration RPC", async () => {
+		const response = await POST(
+			new NextRequest("http://localhost/api/orders/ord_internal/status", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ status: "CANCELED" }),
+			}),
+			{ params: Promise.resolve({ id: "ord_internal" }) },
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockRpc).toHaveBeenCalledWith("cancel_order_and_restore_inventory", {
+			p_order_id: "ord_internal",
+		});
+		expect(mockUpdate).not.toHaveBeenCalled();
 	});
 
 	it("continues updating status by internal order ID", async () => {
@@ -60,6 +90,22 @@ describe("POST /api/orders/[id]/status", () => {
 		expect(response.status).toBe(200);
 		expect(mockEqForSelect).toHaveBeenCalledWith("id", "ord_internal");
 		expect(mockEqForUpdate).toHaveBeenCalledWith("id", "ord_internal");
+		expect(mockExpectedStatusEq).toHaveBeenCalledWith("status", "AWAITING_PAYMENT");
 		expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: "PAID" }));
+	});
+
+	it("does not overwrite a status changed by a concurrent request", async () => {
+		mockMaybeSingleForUpdate.mockResolvedValue({ data: null, error: null });
+
+		const response = await POST(
+			new NextRequest("http://localhost/api/orders/ord_internal/status", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ status: "PAID" }),
+			}),
+			{ params: Promise.resolve({ id: "ord_internal" }) },
+		);
+
+		expect(response.status).toBe(409);
 	});
 });

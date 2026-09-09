@@ -28,10 +28,11 @@ Run migrations in order:
 3. `20250313100000_atomic_reserve_inventory.sql` – orders table + atomic reserve (prevents overselling)
 4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
 5. `20260909040137_create_catalog.sql` – product/category catalog tables and initial seed data
+6. `20260909150000_current_product_inventory.sql` – replaces period slots with current on-hand stock and atomic cancellation restoration
 
 ## Menu
 
-PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. Availability remains in `inventory_slots`; an active product with no remaining stock stays visible but cannot be added to the cart. Product images remain under `public/img/`, and `products.image` stores their public paths (for example, `/img/cakepop_chocolate.png`).
+PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero. Product images remain under `public/img/`, and `products.image` stores their public paths (for example, `/img/cakepop_chocolate.png`).
 
 ## About Page
 
@@ -62,4 +63,5 @@ The administrative client used for provisioning must remain in server-only tooli
 - `npm run build` – production build
 - `npm run start` – production server
 - `npm run test` – Vitest unit tests
+- `npm run test:db` – isolated PostgreSQL inventory transaction and concurrency tests (requires Docker)
 - `npm run lint` – ESLint
