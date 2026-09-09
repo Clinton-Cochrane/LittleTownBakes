@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { CalendarNavIcon, ChatNavIcon, OrdersNavIcon } from "@/components/icons/navIcons";
+import {
+	CalendarNavIcon,
+	ChatNavIcon,
+	OrdersNavIcon,
+	SettingsNavIcon,
+} from "@/components/icons/navIcons";
 
 /**
  * Admin layout: provides bakery-themed navigation for all admin pages.
@@ -35,6 +40,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 							<Link href="/admin/flavor-requests" className={linkClass}>
 								<ChatNavIcon className="text-caramel" size={18} />
 								Flavor requests
+							</Link>
+							<Link href="/admin/settings" className={linkClass}>
+								<SettingsNavIcon className="text-caramel" size={18} />
+								Settings
 							</Link>
 						</div>
 					</div>
