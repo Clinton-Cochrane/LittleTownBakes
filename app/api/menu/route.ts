@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import type { MenuCatalog, Item } from "@/lib/menuCatalog";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import type { Category, Item } from "@/lib/menuCatalog";
 import {
 	getWeekStart,
 	getMonthStart,
@@ -11,75 +9,114 @@ import {
 	type InventorySlot,
 } from "@/lib/inventory";
 
-/** Load menu.json from public folder */
-async function loadMenuCatalog(): Promise<MenuCatalog> {
-	const path = join(process.cwd(), "public", "menu.json");
-	const raw = await readFile(path, "utf-8");
-	const data = JSON.parse(raw) as Partial<MenuCatalog>;
-	const categories = Array.isArray(data.categories) ? data.categories : [];
-	const items = Array.isArray(data.items) ? data.items : [];
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const normalizedItems: Item[] = items.map((it: any) => ({
-		...it,
-		id: String(it.id ?? "").trim(),
-		name: String(it.name ?? "").trim(),
-		categoryId: String(it.categoryId ?? "").trim(),
-		basePrice: typeof it.basePrice === "number" ? it.basePrice : Number(it.basePrice ?? 0),
-		availability: { inStock: Boolean(it?.availability?.inStock) },
-		isArchived: Boolean(it?.isArchived),
-	})).filter((it: Item) => it.id && it.name && it.categoryId);
-	return { categories, items: normalizedItems };
+type CategoryRow = {
+	id: string;
+	name: string;
+	sort_order: number;
+};
+
+type ProductRow = {
+	id: string;
+	category_id: string;
+	name: string;
+	description: string | null;
+	price_cents: number;
+	image: string | null;
+	max_per_order: number;
+	is_archived: boolean;
+	sort_order: number;
+};
+
+function compareCatalogEntries(
+	a: { id: string; name: string; sortOrder?: number },
+	b: { id: string; name: string; sortOrder?: number }
+): number {
+	const sortOrderDifference = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+	if (sortOrderDifference !== 0) return sortOrderDifference;
+
+	const nameDifference = a.name.localeCompare(b.name);
+	if (nameDifference !== 0) return nameDifference;
+
+	return a.id.localeCompare(b.id);
+}
+
+function mapCategory(row: CategoryRow): Category {
+	return {
+		id: row.id,
+		name: row.name,
+		sortOrder: row.sort_order,
+	};
+}
+
+function mapProduct(row: ProductRow): Item {
+	return {
+		id: row.id,
+		name: row.name,
+		categoryId: row.category_id,
+		description: row.description ?? undefined,
+		basePrice: row.price_cents / 100,
+		image: row.image ?? undefined,
+		maxPerOrder: row.max_per_order,
+		isArchived: row.is_archived,
+		sortOrder: row.sort_order,
+		availability: { inStock: false },
+	};
 }
 
 export async function GET() {
 	try {
-		const [catalog, { data: slots, error: slotsError }] = await Promise.all([
-			loadMenuCatalog(),
-			supabaseAdmin.from("inventory_slots").select("*"),
+		const supabase = getSupabaseAdmin();
+		const [categoriesResult, productsResult, slotsResult] = await Promise.all([
+			supabase.from("categories").select("id, name, sort_order"),
+			supabase
+				.from("products")
+				.select("id, category_id, name, description, price_cents, image, max_per_order, is_archived, sort_order"),
+			supabase.from("inventory_slots").select("*"),
 		]);
 
-		const inventorySlots = slotsError ? [] : ((slots ?? []) as InventorySlot[]);
+		if (categoriesResult.error || productsResult.error) {
+			throw new Error(
+				categoriesResult.error?.message ?? productsResult.error?.message ?? "Catalog query failed"
+			);
+		}
+
+		const categories = ((categoriesResult.data ?? []) as CategoryRow[])
+			.map(mapCategory)
+			.sort(compareCatalogEntries);
+		const catalogItems = ((productsResult.data ?? []) as ProductRow[])
+			.map(mapProduct)
+			.sort(compareCatalogEntries);
+		const inventorySlots = slotsResult.error ? [] : ((slotsResult.data ?? []) as InventorySlot[]);
 		const now = new Date();
 		const weekStart = getWeekStart(now);
 		const monthStart = getMonthStart(now);
 
-		// Filter slots to current week and month only
 		const relevantSlots = inventorySlots.filter(
-			(s) =>
-				(s.period_type === "week" && s.period_start === weekStart) ||
-				(s.period_type === "month" && s.period_start === monthStart)
+			(slot) =>
+				(slot.period_type === "week" && slot.period_start === weekStart) ||
+				(slot.period_type === "month" && slot.period_start === monthStart)
 		);
 
-		const enrichedItems = catalog.items.map((item) => {
+		const enrichedItems = catalogItems.map((item) => {
 			const slot = findRelevantSlot(relevantSlots, item.id, now);
-			if (slot) {
-				const remaining = getRemaining(slot);
-				return {
-					...item,
-					remaining,
-					available: remaining > 0,
-					availability: { inStock: remaining > 0 },
-				};
-			}
-			// No slot: use JSON inStock
+			const remaining = slot ? getRemaining(slot) : 0;
+			const available = remaining > 0;
+
 			return {
 				...item,
-				remaining: undefined,
-				available: item.availability.inStock,
+				remaining,
+				available,
+				availability: { inStock: available },
 			};
 		});
 
-		// Exclude archived from main menu; include them for "Request a flavor"
-		const items = enrichedItems.filter((i) => !(i as { isArchived?: boolean }).isArchived);
-		const archivedItems = enrichedItems.filter((i) => (i as { isArchived?: boolean }).isArchived);
-
 		return NextResponse.json({
-			categories: catalog.categories,
-			items,
-			archivedItems,
+			categories,
+			items: enrichedItems.filter((item) => !item.isArchived),
+			archivedItems: enrichedItems.filter((item) => item.isArchived),
 		});
-	} catch (e) {
-		console.error("[api/menu]", e);
+	} catch (error) {
+		console.error("[api/menu]", error);
 		return NextResponse.json({ error: "Menu unavailable" }, { status: 500 });
 	}
 }

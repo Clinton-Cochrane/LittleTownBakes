@@ -27,10 +27,11 @@ Run migrations in order:
 2. `20250313000001_create_flavor_requests.sql` – customer flavor requests
 3. `20250313100000_atomic_reserve_inventory.sql` – orders table + atomic reserve (prevents overselling)
 4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
+5. `20260909040137_create_catalog.sql` – product/category catalog tables and initial seed data
 
 ## Menu
 
-Edit `public/menu.json` to add/remove items. Set `isArchived: true` to move items to the Past Flavors page only. Add product images to `public/img/` (e.g. `cakepop_chocolate.png`).
+PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. Availability remains in `inventory_slots`; an active product with no remaining stock stays visible but cannot be added to the cart. Product images remain under `public/img/`, and `products.image` stores their public paths (for example, `/img/cakepop_chocolate.png`).
 
 ## About Page
 

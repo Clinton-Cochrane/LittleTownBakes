@@ -19,6 +19,7 @@ export type Item = {
     availability: Availability;
     maxPerOrder?: number;
     isArchived?: boolean;
+	sortOrder?: number;
     variants?: Array<{id: string; name: string; deltaPrice?: number; price?: number}>;
 };
 
@@ -53,33 +54,6 @@ export function formatCurrency(n:number, locale = "en-US", currency = "USD") {
     }
 }
 
-/*Light validation*/
-export async function getMenuCatalog(): Promise<MenuCatalog> {
-    try{
-        const res = await fetch("/menu.json", {cache: "no-store"});
-        if(!res.ok) throw new Error(`Failed to fetch menu.json: ${res.status}`);
-        const data = (await res.json()) as Partial<MenuCatalog>;
-
-        const categories = Array.isArray(data.categories) ? data.categories:[];
-        const items = Array.isArray(data.items) ? data.items: [];
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const normalizedItems : Item[] = items.map((it:any) => ({
-            ...it,
-            id: String(it.id ?? "").trim(),
-            name: String(it.name ?? "").trim(),
-            categoryId: String(it.categoryId ?? "").trim(),
-            basePrice: typeof it.basePrice === "number" ? it.basePrice: Number(it.basePrice ?? 0),
-            availability: {inStock: Boolean(it?.availability?.inStock)},
-        }))
-        .filter((it:Item) => it.id && it.name && it.categoryId);
-        return {categories, items: normalizedItems};
-    } catch (e) {
-        console.error("[getMenuCatalog]errors:", e);
-        return {categories:[], items:[]};
-    }
-}
-
 /*Group + Sort -> sections for UI. Skips orphaned Items; logs once*/
 export function buildSections(catalog:MenuCatalog): Section[] {
     const catById = new Map(catalog.categories.map((c) => [c.id, c]));
@@ -107,12 +81,15 @@ export function buildSections(catalog:MenuCatalog): Section[] {
     });
 
     const sections: Section[] = categoriesSorted.map((cat) => {
-        const items = (itemsByCat.get(cat.id) ?? []).sort((a,b) =>
-            a.name.localeCompare(b.name)
-        );
+		const items = (itemsByCat.get(cat.id) ?? []).sort((a,b) => {
+			const sortOrderDifference = (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999);
+			if (sortOrderDifference !== 0) return sortOrderDifference;
+			const nameDifference = a.name.localeCompare(b.name);
+			if (nameDifference !== 0) return nameDifference;
+			return a.id.localeCompare(b.id);
+		});
         return {category:cat, items};
     });
 
     return sections;
 }
-
