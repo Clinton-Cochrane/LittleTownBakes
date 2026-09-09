@@ -4,6 +4,7 @@ import type { OrderRecord } from "@/lib/orderTypes";
 import { notifyNewOrder } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { validateOrderPayload } from "@/lib/orderValidation";
+import { createTrackingToken } from "@/lib/orderTracking";
 
 export async function POST(req: NextRequest) {
 	const rateLimitResponse = checkRateLimit(req);
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
 
 		const { data: orderData } = validation;
 		const id = `ord_${Date.now().toString(36)}`;
+		const trackingToken = createTrackingToken();
 		const supabase = getSupabaseAdmin();
 
 		const { data: slots } = await supabase.from("inventory_slots").select("id");
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest) {
 			const itemsPayload = orderData.items.map((i) => ({ id: i.id, qty: i.qty }));
 			const { error } = await supabase.rpc("create_order_with_reserve", {
 				p_order_id: id,
+				p_tracking_token: trackingToken,
 				p_payload: order,
 				p_items: itemsPayload,
 			});
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
 			// No inventory slots: insert order only (e.g. before admin sets up inventory)
 			const { error } = await supabase.from("orders").insert({
 				id: order.id,
+				tracking_token: trackingToken,
 				status: order.status,
 				payload: order,
 			});
@@ -63,7 +67,7 @@ export async function POST(req: NextRequest) {
 		}
 
 		notifyNewOrder(order).catch(console.warn);
-		return NextResponse.json({ id: order.id }, { status: 201 });
+		return NextResponse.json({ trackingToken }, { status: 201 });
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (e: any) {
 		return NextResponse.json({ error: e.message ?? "failed" }, { status: 400 });

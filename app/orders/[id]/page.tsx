@@ -2,21 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import type { OrderRecord } from "@/lib/orderTypes";
+import type { PublicOrderTracking } from "@/lib/orderTypes";
 import { formatCurrency } from "@/lib/menuCatalog";
 
 export default function OrderPage() {
-	const { id } = useParams<{ id: string }>();
-	const [order, setOrder] = useState<OrderRecord | null>(null);
+	const { id: token } = useParams<{ id: string }>();
+	const [order, setOrder] = useState<PublicOrderTracking | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let t: number;
 		async function poll() {
-			const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
+			const res = await fetch(`/api/orders/track/${token}`, { cache: "no-store" });
 			if (res.ok) {
 				setLoadError(null);
-				const o: OrderRecord = await res.json();
+				const o: PublicOrderTracking = await res.json();
 				setOrder(o);
 				if (["READY_FOR_PICKUP", "COMPLETED", "CANCELED"].includes(o.status)) return;
 			} else if (res.status === 404 || res.status === 503) {
@@ -31,9 +31,9 @@ export default function OrderPage() {
 		}
 		poll();
 		return () => clearTimeout(t);
-	}, [id]);
+	}, [token]);
 
-	const subtotal = useMemo(() => order?.items.reduce((s, i) => s + i.price * i.qty, 0) ?? 0, [order]);
+	const total = useMemo(() => order?.total ?? 0, [order]);
 	if (loadError) {
 		return (
 			<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
@@ -54,7 +54,7 @@ export default function OrderPage() {
 
 	return (
 		<main className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
-			<h1 className="mb-6 font-display text-3xl font-semibold text-cocoa">Order #{order.id}</h1>
+			<h1 className="mb-6 font-display text-3xl font-semibold text-cocoa">Your order</h1>
 			{isAwaitingPayment && (
 				<div className="mb-6 rounded-lg border border-crust bg-wheat p-4">
 					<p className="font-semibold text-cocoa">Order placed!</p>
@@ -69,9 +69,9 @@ export default function OrderPage() {
 			</div>
 
 			<section>
-				{order.items.map((i) => (
+				{order.items.map((i, index) => (
 					<div
-						key={i.id}
+						key={`${i.name}-${i.price}-${index}`}
 						className="mb-2 grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-crust bg-wheat p-4"
 					>
 						<div>
@@ -85,7 +85,7 @@ export default function OrderPage() {
 				))}
 				<div className="mt-4 flex justify-between font-semibold text-cocoa">
 					<span className="text-sage">Total</span>
-					<span>{formatCurrency(subtotal)}</span>
+					<span>{formatCurrency(total)}</span>
 				</div>
 			</section>
 		</main>

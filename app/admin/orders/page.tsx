@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
+import type { AdminOrderRecord, OrderStatus } from "@/lib/orderTypes";
 import {
 	getAllowedNextStatuses,
 	orderStatusActionLabel,
@@ -16,7 +16,7 @@ function pipelineIndex(status: OrderStatus): number {
 }
 
 export default function AdminOrders() {
-	const [orders, setOrders] = useState<OrderRecord[]>([]);
+	const [orders, setOrders] = useState<AdminOrderRecord[]>([]);
 	const [error, setError] = useState<string | null>(null);
 
 	async function fetchList() {
@@ -91,7 +91,7 @@ function OrderCard({
 	order: o,
 	onSetStatus,
 }: {
-	order: OrderRecord;
+	order: AdminOrderRecord;
 	onSetStatus: (id: string, status: OrderStatus) => void;
 }) {
 	const idx = pipelineIndex(o.status);
@@ -106,9 +106,11 @@ function OrderCard({
 					<span className="mx-2 text-sage">—</span>
 					<span className="text-cocoa">{o.customer.name}</span>
 				</div>
-				<Link href={`/orders/${o.id}`} className="text-sm font-medium text-honey hover:underline">
-					View order
-				</Link>
+				{o.trackingToken && (
+					<Link href={`/orders/${o.trackingToken}`} className="text-sm font-medium text-honey hover:underline">
+						View order
+					</Link>
+				)}
 			</div>
 
 			{isCanceled ? (

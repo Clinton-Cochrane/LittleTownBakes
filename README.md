@@ -26,6 +26,7 @@ Run migrations in order:
 1. `20250313000000_create_inventory_slots.sql` – inventory per item per period
 2. `20250313000001_create_flavor_requests.sql` – customer flavor requests
 3. `20250313100000_atomic_reserve_inventory.sql` – orders table + atomic reserve (prevents overselling)
+4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
 
 ## Menu
 

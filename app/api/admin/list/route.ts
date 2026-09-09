@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import type { OrderRecord } from "@/lib/orderTypes";
+import type { AdminOrderRecord, OrderRecord } from "@/lib/orderTypes";
 
 /**
  * Admin list orders API.
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 	let query = supabase
 		.from("orders")
-		.select("id, created_at, status, payload")
+		.select("id, tracking_token, created_at, status, payload")
 		.order("created_at", { ascending: false });
 
 	if (statusFilter) {
@@ -40,10 +40,11 @@ export async function GET(req: NextRequest) {
 	}
 
 	const rows = data ?? [];
-	const orders: OrderRecord[] = rows.map((row) => {
+	const orders: AdminOrderRecord[] = rows.map((row) => {
 		const payload = row.payload as Record<string, unknown>;
 		return {
 			id: row.id,
+			trackingToken: row.tracking_token,
 			createdAt: (row.created_at ?? payload?.createdAt) as string,
 			status: row.status as OrderRecord["status"],
 			customer: (payload?.customer ?? { name: "", email: "" }) as OrderRecord["customer"],

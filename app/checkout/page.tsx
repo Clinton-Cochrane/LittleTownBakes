@@ -38,7 +38,7 @@ export default function CheckoutPage() {
 			body: JSON.stringify(payload),
 		});
 		setSubmitting(false);
-		let json: { id?: string; error?: string };
+		let json: { trackingToken?: string; error?: string };
 		try {
 			json = await res.json();
 		} catch {
@@ -48,13 +48,13 @@ export default function CheckoutPage() {
 			setError(json.error ?? "Order failed. Please try again.");
 			return;
 		}
-		if (!json.id) {
+		if (!json.trackingToken) {
 			setError("Order created but received invalid response. Please contact the bakery.");
 			return;
 		}
 		orderPlacedRef.current = true;
 		clearCart();
-		router.push(`/orders/${json.id}`);
+		router.push(`/orders/${json.trackingToken}`);
 	}
 
 	return (

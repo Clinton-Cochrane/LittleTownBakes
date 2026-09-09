@@ -24,3 +24,17 @@ export type OrderRecord = {
     items: OrderItem[];
     totals: {subtotal: number; tax: number; total: number};
 };
+
+export type PublicOrderTracking = {
+	status: OrderStatus;
+	items: {
+		name: string;
+		price: number;
+		qty: number;
+	}[];
+	total: number;
+};
+
+export type AdminOrderRecord = OrderRecord & {
+	trackingToken: string | null;
+};
