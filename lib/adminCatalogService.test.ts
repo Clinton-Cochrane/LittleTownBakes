@@ -135,19 +135,20 @@ describe("admin catalog persistence", () => {
 		expect(moved).toMatchObject({ id: "generated-product-id", categoryId: "cookies", isArchived: true, quantityOnHand: 7 });
 	});
 
-	it("archive writes only archive state", async () => {
+	it.each([true, false])("archive state %s writes only archive state and retains the image", async (archivedState) => {
 		const update = vi.fn();
+		const image = "https://bakery.supabase.co/storage/v1/object/public/product-images/products/cake/cake-a3f91c.webp";
 		let productCall = 0;
 		mockFrom.mockImplementation((table: string) => {
 			if (table === "product_inventory") return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { quantity_on_hand: 9 }, error: null }) }) }) };
 			productCall++;
 			if (productCall === 1) return { update: (values: unknown) => { update(values); return { eq: () => ({ select: () => ({ maybeSingle: async () => ({ data: { id: productRow.id }, error: null }) }) }) }; } };
-			return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { ...productRow, is_archived: true }, error: null }) }) }) };
+			return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { ...productRow, image, is_archived: archivedState }, error: null }) }) }) };
 		});
 
-		const archived = await setProductArchived(productRow.id, true);
+		const archived = await setProductArchived(productRow.id, archivedState);
 
-		expect(update).toHaveBeenCalledWith({ is_archived: true });
-		expect(archived).toMatchObject({ id: productRow.id, isArchived: true, quantityOnHand: 9 });
+		expect(update).toHaveBeenCalledWith({ is_archived: archivedState });
+		expect(archived).toMatchObject({ id: productRow.id, image, isArchived: archivedState, quantityOnHand: 9 });
 	});
 });
