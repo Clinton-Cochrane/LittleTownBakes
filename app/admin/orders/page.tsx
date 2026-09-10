@@ -5,6 +5,7 @@ import Link from "next/link";
 import { handleAdminAuthFailure } from "@/lib/adminResponse";
 import type { AdminOrderRecord, FulfillmentStatus, PaymentStatus } from "@/lib/orderTypes";
 import { formatCurrency } from "@/lib/menuCatalog";
+import { formatPickupWindow } from "@/lib/pickupWindows";
 import {
 	getAllowedNextStatuses,
 	orderStatusActionLabel,
@@ -116,6 +117,11 @@ function OrderCard({
 					<button type="button" className="btn-primary" onClick={() => onUpdate(o.id, { paymentStatus: "PAID" })}>Mark paid</button>
 				)}
 			</div>
+			{o.pickup && (
+				<p className="mt-3 rounded-lg border border-crust bg-cream/80 px-3 py-2 text-cocoa">
+					<strong>Pickup:</strong> {formatPickupWindow(o.pickup, "short")}
+				</p>
+			)}
 			<ul className="mt-4 space-y-1 text-sm text-cocoa">
 				{o.items.map((item) => (
 					<li key={item.productId} className="flex justify-between gap-4">

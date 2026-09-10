@@ -4,6 +4,7 @@ import { validateOrderPayload } from "./orderValidation";
 const validPayload = {
 	customer: { name: "Alice Baker", email: "alice@example.com" },
 	payment: { method: "cash" },
+	pickupWindowId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 	items: [{ productId: "cake", quantity: 1 }],
 };
 
@@ -13,11 +14,32 @@ describe("validateOrderPayload", () => {
 			...validPayload,
 			customer: { ...validPayload.customer, name: "  Alice Baker  ", phone: " 555-0100 " },
 		});
-		expect(result).toEqual({ ok: true, data: {
+			expect(result).toEqual({ ok: true, data: {
 			customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100" },
 			payment: { method: "cash" },
+			pickupWindowId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 			items: [{ productId: "cake", quantity: 1 }],
 		} });
+	});
+
+	it("requires a pickup-window ID and ignores customer-supplied pickup timestamps", () => {
+		expect(validateOrderPayload({ ...validPayload, pickupWindowId: undefined })).toMatchObject({
+			ok: false,
+			code: "INVALID_PICKUP_WINDOW",
+		});
+		expect(validateOrderPayload({ ...validPayload, pickupWindowId: "not-a-uuid" })).toMatchObject({
+			ok: false,
+			code: "INVALID_PICKUP_WINDOW",
+		});
+		const result = validateOrderPayload({
+			...validPayload,
+			pickup: { startAt: "1900-01-01T00:00:00Z", endAt: "2999-01-01T00:00:00Z" },
+		});
+		expect(result).toMatchObject({
+			ok: true,
+			data: { pickupWindowId: validPayload.pickupWindowId },
+		});
+		expect(JSON.stringify(result)).not.toContain("1900-01-01");
 	});
 
 	it("accepts Zelle with an optional note", () => {

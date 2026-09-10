@@ -25,7 +25,7 @@ export async function GET(
 
 	if (error || !data) return notFound();
 
-	const payload = data.payload as Pick<OrderRecord, "payment" | "items" | "totals">;
+	const payload = data.payload as Pick<OrderRecord, "payment" | "pickup" | "items" | "totals">;
 	const order = toPublicOrderTracking(data.status as FulfillmentStatus, payload);
 	return NextResponse.json(order, { headers: NO_STORE_HEADERS });
 }

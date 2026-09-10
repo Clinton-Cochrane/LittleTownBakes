@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
 			fulfillmentStatus: row.status as OrderRecord["fulfillmentStatus"],
 			payment: payload.payment as OrderRecord["payment"],
 			customer: (payload?.customer ?? { name: "", email: "" }) as OrderRecord["customer"],
+			pickup: payload.pickup as OrderRecord["pickup"],
 			items: (payload?.items ?? []) as OrderRecord["items"],
 			totals: payload.totals as OrderRecord["totals"],
 		};

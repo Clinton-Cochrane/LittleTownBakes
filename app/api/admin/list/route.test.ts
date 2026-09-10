@@ -45,6 +45,7 @@ describe("GET /api/admin/list", () => {
 				payload: {
 					customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Baker needs this" },
 					payment: { method: "zelle", status: "PENDING" },
+					pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 					items: [{ productId: "cake", name: "Chocolate Cake", unitPriceCents: 2500, quantity: 1, lineTotalCents: 2500 }],
 					totals: { subtotalCents: 2500, totalCents: 2500 },
 				},
@@ -71,6 +72,7 @@ describe("GET /api/admin/list", () => {
 			customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Baker needs this" },
 			fulfillmentStatus: "IN_PROGRESS",
 			payment: { method: "zelle", status: "PENDING" },
+			pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 			totals: { subtotalCents: 2500, totalCents: 2500 },
 		});
 	});

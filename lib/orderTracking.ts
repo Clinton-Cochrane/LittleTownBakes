@@ -13,11 +13,12 @@ export function isValidTrackingToken(value: string): boolean {
 
 export function toPublicOrderTracking(
 	fulfillmentStatus: FulfillmentStatus,
-	payload: Pick<OrderRecord, "payment" | "items" | "totals">,
+	payload: Pick<OrderRecord, "payment" | "pickup" | "items" | "totals">,
 ): PublicOrderTracking {
 	return {
 		fulfillmentStatus,
 		payment: { method: payload.payment.method, status: payload.payment.status },
+		...(payload.pickup && { pickup: { startAt: payload.pickup.startAt, endAt: payload.pickup.endAt } }),
 		items: payload.items.map((item) => ({
 			productId: item.productId,
 			name: item.name,

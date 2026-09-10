@@ -5,12 +5,16 @@ BEGIN
 END;
 $$;
 
+INSERT INTO public.pickup_windows (id, start_at, end_at, enabled)
+VALUES ('11111111-1111-4111-8111-111111111111', '2099-09-18T18:42:00-07:00', '2099-09-18T19:25:00-07:00', true)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE FUNCTION pg_temp.place(test_id TEXT, payment JSONB, items JSONB)
 RETURNS JSONB LANGUAGE sql AS $$
     SELECT public.create_authoritative_order(
         test_id, 'track_' || test_id,
         '{"name":"Test Customer","email":"test@example.com"}'::jsonb,
-        payment, items
+        payment, items, '11111111-1111-4111-8111-111111111111'
     );
 $$;
 

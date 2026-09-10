@@ -5,6 +5,10 @@ BEGIN
 END;
 $$;
 
+INSERT INTO public.pickup_windows (id, start_at, end_at, enabled)
+VALUES ('11111111-1111-4111-8111-111111111111', '2099-09-18T18:42:00-07:00', '2099-09-18T19:25:00-07:00', true)
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO public.categories (id, name, sort_order)
 VALUES ('demand-tests', 'Demand Tests', 900);
 INSERT INTO public.products (id, category_id, name, price_cents, max_per_order)
@@ -80,13 +84,15 @@ SELECT public.create_authoritative_order(
     'demand_sale', 'track_demand_sale',
     '{"name":"Demand Buyer","email":"buyer@example.com"}'::jsonb,
     '{"method":"cash"}'::jsonb,
-    '[{"productId":"demand-cake","quantity":3}]'::jsonb
+    '[{"productId":"demand-cake","quantity":3}]'::jsonb,
+    '11111111-1111-4111-8111-111111111111'
 );
 SELECT public.create_authoritative_order(
     'demand_canceled', 'track_demand_canceled',
     '{"name":"Canceled Buyer","email":"cancel@example.com"}'::jsonb,
     '{"method":"cash"}'::jsonb,
-    '[{"productId":"demand-cake","quantity":2}]'::jsonb
+    '[{"productId":"demand-cake","quantity":2}]'::jsonb,
+    '11111111-1111-4111-8111-111111111111'
 );
 SELECT public.cancel_order_and_restore_inventory('demand_canceled');
 UPDATE public.products SET is_archived = true WHERE id = 'demand-cake';
