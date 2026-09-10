@@ -6,5 +6,5 @@ export async function notifyNewOrder(order: OrderRecord) {
 }
 
 export async function notifyStatusChange(order: OrderRecord) {
-	console.log("[notify] status change", order.id, order.status);
+	console.log("[notify] status change", order.id, order.fulfillmentStatus);
 }

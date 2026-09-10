@@ -1,19 +1,20 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import type { PaymentMethod } from "@/lib/orderTypes";
 
 export type CheckoutData = {
 	name: string;
 	email: string;
 	phone?: string;
 	notes?: string;
-	paymentMethod: "venmo" | "cash";
+	paymentMethod: PaymentMethod;
 	venmoUser?: string;
-	venmoNote?: string;
+	paymentNote?: string;
 };
 
 type Props = {
 	onSubmit: (data: CheckoutData) => void;
-	onPaymentMethodChange?: (method: "venmo" | "cash") => void;
+	onPaymentMethodChange?: (method: PaymentMethod) => void;
 };
 
 export default function CheckoutForm({ onSubmit, onPaymentMethodChange }: Props) {
@@ -30,9 +31,7 @@ export default function CheckoutForm({ onSubmit, onPaymentMethodChange }: Props)
 	const isValid = useMemo(() => {
 		const contactValid =
 			form.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
-		const venmoValid =
-			form.paymentMethod === "cash" ||
-			(form.venmoUser?.trim() ?? "").length > 0;
+		const venmoValid = form.paymentMethod !== "venmo" || (form.venmoUser?.trim() ?? "").length > 0;
 		return contactValid && venmoValid;
 	}, [form]);
 
@@ -108,6 +107,11 @@ export default function CheckoutForm({ onSubmit, onPaymentMethodChange }: Props)
 						/>
 						<span className="text-cocoa">Cash</span>
 					</label>
+					<label className="flex cursor-pointer items-center gap-2">
+						<input type="radio" name="paymentMethod" value="zelle" checked={form.paymentMethod === "zelle"}
+							onChange={() => setForm((s) => ({ ...s, paymentMethod: "zelle" }))} className="h-4 w-4 accent-honey" />
+						<span className="text-cocoa">Zelle</span>
+					</label>
 				</div>
 			</fieldset>
 
@@ -125,13 +129,19 @@ export default function CheckoutForm({ onSubmit, onPaymentMethodChange }: Props)
 					<label>
 						<div className="mb-1.5 text-sm font-medium text-cocoa">Payment note (optional)</div>
 						<input
-							value={form.venmoNote ?? ""}
-							onChange={(e) => setForm((s) => ({ ...s, venmoNote: e.target.value }))}
+							value={form.paymentNote ?? ""}
+							onChange={(e) => setForm((s) => ({ ...s, paymentNote: e.target.value }))}
 							placeholder="Order # or item description"
 							className="input-base"
 						/>
 					</label>
 				</div>
+			)}
+			{form.paymentMethod === "zelle" && (
+				<label className="rounded-lg border border-crust bg-wheat/50 p-4">
+					<div className="mb-1.5 text-sm font-medium text-cocoa">Payment note/reference (optional)</div>
+					<input value={form.paymentNote ?? ""} onChange={(e) => setForm((s) => ({ ...s, paymentNote: e.target.value }))} className="input-base" />
+				</label>
 			)}
 		</form>
 	);

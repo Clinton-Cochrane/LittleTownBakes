@@ -29,6 +29,8 @@ Run migrations in order:
 4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
 5. `20260909040137_create_catalog.sql` – product/category catalog tables and initial seed data
 6. `20260909150000_current_product_inventory.sql` – replaces period slots with current on-hand stock and atomic cancellation restoration
+7. `20260909200000_server_authoritative_checkout.sql` – server-authoritative catalog validation, pricing, order snapshots, and private order access
+8. `20260909201000_private_flavor_requests.sql` – prevents browser roles from directly reading or modifying customer flavor requests
 
 ## Menu
 

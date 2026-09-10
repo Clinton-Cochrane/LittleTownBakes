@@ -41,11 +41,12 @@ describe("GET /api/admin/list", () => {
 				id: "ord_internal",
 				tracking_token: "f3d4ec4e-f6c8-4dc1-b5f8-5d2fba9a8d4a",
 				created_at: "2026-09-08T20:00:00.000Z",
-				status: "PAID",
+				status: "IN_PROGRESS",
 				payload: {
 					customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Baker needs this" },
-					items: [{ id: "cake", name: "Chocolate Cake", price: 25, qty: 1 }],
-					totals: { subtotal: 25, tax: 0, total: 25 },
+					payment: { method: "zelle", status: "PENDING" },
+					items: [{ productId: "cake", name: "Chocolate Cake", unitPriceCents: 2500, quantity: 1, lineTotalCents: 2500 }],
+					totals: { subtotalCents: 2500, totalCents: 2500 },
 				},
 			}],
 			error: null,
@@ -68,6 +69,9 @@ describe("GET /api/admin/list", () => {
 			id: "ord_internal",
 			trackingToken: "f3d4ec4e-f6c8-4dc1-b5f8-5d2fba9a8d4a",
 			customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Baker needs this" },
+			fulfillmentStatus: "IN_PROGRESS",
+			payment: { method: "zelle", status: "PENDING" },
+			totals: { subtotalCents: 2500, totalCents: 2500 },
 		});
 	});
 });

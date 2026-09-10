@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { OrderRecord, OrderStatus, PublicOrderTracking } from "./orderTypes";
+import type { FulfillmentStatus, OrderRecord, PublicOrderTracking } from "./orderTypes";
 
 const TRACKING_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -12,16 +12,19 @@ export function isValidTrackingToken(value: string): boolean {
 }
 
 export function toPublicOrderTracking(
-	status: OrderStatus,
-	payload: Pick<OrderRecord, "items" | "totals">,
+	fulfillmentStatus: FulfillmentStatus,
+	payload: Pick<OrderRecord, "payment" | "items" | "totals">,
 ): PublicOrderTracking {
 	return {
-		status,
+		fulfillmentStatus,
+		payment: { method: payload.payment.method, status: payload.payment.status },
 		items: payload.items.map((item) => ({
+			productId: item.productId,
 			name: item.name,
-			price: item.price,
-			qty: item.qty,
+			unitPriceCents: item.unitPriceCents,
+			quantity: item.quantity,
+			lineTotalCents: item.lineTotalCents,
 		})),
-		total: payload.totals.total,
+		totals: payload.totals,
 	};
 }

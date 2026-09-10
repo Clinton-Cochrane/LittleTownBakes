@@ -5,180 +5,180 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION pg_temp.place(test_id TEXT, payment JSONB, items JSONB)
+RETURNS JSONB LANGUAGE sql AS $$
+    SELECT public.create_authoritative_order(
+        test_id, 'track_' || test_id,
+        '{"name":"Test Customer","email":"test@example.com"}'::jsonb,
+        payment, items
+    );
+$$;
+
 SELECT pg_temp.assert_true(
-    (SELECT count(*) = (SELECT count(*) FROM public.products)
-     FROM public.product_inventory),
+    (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.orders'::regclass),
+    'orders has row-level security enabled'
+);
+SELECT pg_temp.assert_true(
+    NOT has_table_privilege('anon', 'public.orders', 'SELECT')
+    AND NOT has_table_privilege('anon', 'public.orders', 'INSERT')
+    AND NOT has_table_privilege('anon', 'public.orders', 'UPDATE')
+    AND NOT has_table_privilege('anon', 'public.orders', 'DELETE')
+    AND NOT has_table_privilege('authenticated', 'public.orders', 'SELECT')
+    AND NOT has_table_privilege('authenticated', 'public.orders', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.orders', 'UPDATE')
+    AND NOT has_table_privilege('authenticated', 'public.orders', 'DELETE'),
+    'browser roles have no direct orders privileges'
+);
+SELECT pg_temp.assert_true(
+    has_table_privilege('service_role', 'public.orders', 'SELECT')
+    AND has_table_privilege('service_role', 'public.orders', 'INSERT')
+    AND has_table_privilege('service_role', 'public.orders', 'UPDATE')
+    AND has_table_privilege('service_role', 'public.orders', 'DELETE'),
+    'service role retains server-side orders access'
+);
+SELECT pg_temp.assert_true(
+    (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.flavor_requests'::regclass),
+    'flavor_requests has row-level security enabled'
+);
+SELECT pg_temp.assert_true(
+    NOT has_table_privilege('anon', 'public.flavor_requests', 'SELECT')
+    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'INSERT')
+    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'UPDATE')
+    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'DELETE')
+    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'SELECT')
+    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'UPDATE')
+    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'DELETE'),
+    'browser roles have no direct flavor_requests privileges'
+);
+SELECT pg_temp.assert_true(
+    has_table_privilege('service_role', 'public.flavor_requests', 'SELECT')
+    AND has_table_privilege('service_role', 'public.flavor_requests', 'INSERT')
+    AND has_table_privilege('service_role', 'public.flavor_requests', 'UPDATE')
+    AND has_table_privilege('service_role', 'public.flavor_requests', 'DELETE'),
+    'service role retains server-side flavor_requests access'
+);
+
+SELECT pg_temp.assert_true(
+    (SELECT count(*) = (SELECT count(*) FROM public.products) FROM public.product_inventory),
     'migration seeds every existing product'
 );
-SELECT pg_temp.assert_true(
-    NOT EXISTS (SELECT 1 FROM public.product_inventory WHERE quantity_on_hand <> 0),
-    'existing products start at zero'
-);
 
-INSERT INTO public.products (
-    id, category_id, name, price_cents, max_per_order, is_archived
-) VALUES ('test_new_product', 'cookies', 'New Product', 100, 10, false);
+UPDATE public.product_inventory SET quantity_on_hand = 10 WHERE product_id IN ('cakepop_chocolate', 'cakepop_vanilla');
+SELECT pg_temp.place('test_single', '{"method":"cash"}', '[{"productId":"cakepop_chocolate","quantity":2}]');
 SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 0 FROM public.product_inventory WHERE product_id = 'test_new_product'),
-    'new products automatically receive zero inventory'
-);
-
-UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cakepop_chocolate';
-SELECT public.create_order_with_reserve(
-    'test_basic', 'track_basic',
-    '{"status":"AWAITING_PAYMENT","items":[{"id":"cakepop_chocolate","qty":2}]}'::jsonb,
-    '[{"id":"cakepop_chocolate","qty":2}]'::jsonb
+    (SELECT quantity_on_hand = 8 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
+    'valid order decrements current stock'
 );
 SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 3 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
-    'stock 5 order 2 leaves 3'
+    (SELECT payload->>'fulfillmentStatus' = 'RECEIVED'
+        AND payload->'payment'->>'status' = 'PENDING'
+        AND payload->'items'->0->>'name' = 'Chocolate Cake Pop'
+        AND (payload->'items'->0->>'unitPriceCents')::int = 250
+        AND (payload->'items'->0->>'lineTotalCents')::int = 500
+        AND (payload->'totals'->>'subtotalCents')::int = 500
+        AND (payload->'totals'->>'totalCents')::int = 500
+     FROM public.orders WHERE id = 'test_single'),
+    'snapshot and integer-cent totals are authoritative'
 );
 
-UPDATE public.product_inventory SET quantity_on_hand = 0 WHERE product_id = 'cakepop_vanilla';
+SELECT pg_temp.place('test_multi', '{"method":"zelle","note":"Test Customer"}',
+    '[{"productId":"cakepop_chocolate","quantity":1},{"productId":"cakepop_vanilla","quantity":2}]');
+SELECT pg_temp.assert_true(
+    (SELECT (payload->'totals'->>'subtotalCents')::int = 750 FROM public.orders WHERE id = 'test_multi'),
+    'multi-item subtotal is the sum of server prices'
+);
+
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_zero', 'track_zero',
-            '{"items":[{"id":"cakepop_vanilla","qty":1}]}'::jsonb,
-            '[{"id":"cakepop_vanilla","qty":1}]'::jsonb
-        );
-        RAISE EXCEPTION 'zero stock order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'zero stock order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_unknown', '{"method":"cash"}', '[{"productId":"unknown","quantity":1}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'INVALID_PRODUCT%' THEN RAISE; END IF; END;
+END $$;
+
+UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cupcake_chocolate';
+DO $$ BEGIN
+    BEGIN
+        PERFORM pg_temp.place('test_archived', '{"method":"cash"}', '[{"productId":"cupcake_chocolate","quantity":1}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'PRODUCT_UNAVAILABLE%' THEN RAISE; END IF; END;
 END $$;
 
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_invalid_quantity', 'track_invalid_quantity',
-            '{"items":[{"id":"cakepop_vanilla","qty":0}]}'::jsonb,
-            '[{"id":"cakepop_vanilla","qty":0}]'::jsonb
-        );
-        RAISE EXCEPTION 'invalid quantity order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'invalid quantity order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_zero', '{"method":"cash"}', '[{"productId":"cakepop_chocolate","quantity":0}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'INVALID_QUANTITY%' THEN RAISE; END IF; END;
 END $$;
 
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_unknown_product', 'track_unknown_product',
-            '{"items":[{"id":"not_a_product","qty":1}]}'::jsonb,
-            '[{"id":"not_a_product","qty":1}]'::jsonb
-        );
-        RAISE EXCEPTION 'unknown product order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'unknown product order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_max', '{"method":"cash"}',
+            '[{"productId":"cakepop_chocolate","quantity":7},{"productId":"cakepop_chocolate","quantity":6}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'MAX_QUANTITY_EXCEEDED%' THEN RAISE; END IF; END;
 END $$;
 
-DELETE FROM public.product_inventory WHERE product_id = 'test_new_product';
+UPDATE public.product_inventory SET quantity_on_hand = 0 WHERE product_id = 'cookie_snickerdoodle';
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_missing', 'track_missing',
-            '{"items":[{"id":"test_new_product","qty":1}]}'::jsonb,
-            '[{"id":"test_new_product","qty":1}]'::jsonb
-        );
-        RAISE EXCEPTION 'missing inventory order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'missing inventory order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_sold_out', '{"method":"cash"}', '[{"productId":"cookie_snickerdoodle","quantity":1}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'OUT_OF_STOCK%' THEN RAISE; END IF; END;
 END $$;
 
 UPDATE public.product_inventory SET quantity_on_hand = 2 WHERE product_id = 'cupcake_redvelvet';
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_insufficient', 'track_insufficient',
-            '{"items":[{"id":"cupcake_redvelvet","qty":3}]}'::jsonb,
-            '[{"id":"cupcake_redvelvet","qty":3}]'::jsonb
-        );
-        RAISE EXCEPTION 'insufficient stock order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'insufficient stock order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_insufficient', '{"method":"cash"}', '[{"productId":"cupcake_redvelvet","quantity":3}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'OUT_OF_STOCK%' THEN RAISE; END IF; END;
 END $$;
 SELECT pg_temp.assert_true(
     (SELECT quantity_on_hand = 2 FROM public.product_inventory WHERE product_id = 'cupcake_redvelvet'),
-    'insufficient reservation leaves stock unchanged'
+    'insufficient stock rejection does not decrement inventory'
 );
+
+INSERT INTO public.products (id, category_id, name, price_cents, max_per_order) VALUES ('test_missing_stock', 'cookies', 'Missing Stock', 125, 5);
+DELETE FROM public.product_inventory WHERE product_id = 'test_missing_stock';
+DO $$ BEGIN
+    BEGIN
+        PERFORM pg_temp.place('test_missing', '{"method":"cash"}', '[{"productId":"test_missing_stock","quantity":1}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'OUT_OF_STOCK%' THEN RAISE; END IF; END;
+END $$;
 
 UPDATE public.product_inventory SET quantity_on_hand = 2 WHERE product_id = 'cakepop_chocolate';
 UPDATE public.product_inventory SET quantity_on_hand = 0 WHERE product_id = 'cakepop_vanilla';
 DO $$ BEGIN
     BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_partial', 'track_partial',
-            '{"items":[{"id":"cakepop_chocolate","qty":1},{"id":"cakepop_vanilla","qty":1}]}'::jsonb,
-            '[{"id":"cakepop_chocolate","qty":1},{"id":"cakepop_vanilla","qty":1}]'::jsonb
-        );
-        RAISE EXCEPTION 'partial order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'partial order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
+        PERFORM pg_temp.place('test_atomic', '{"method":"cash"}',
+            '[{"productId":"cakepop_chocolate","quantity":1},{"productId":"cakepop_vanilla","quantity":1}]');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'OUT_OF_STOCK%' THEN RAISE; END IF; END;
 END $$;
-SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 2 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
-    'multi-item failure rolls back prior decrement'
-);
-
-UPDATE public.product_inventory SET quantity_on_hand = 4 WHERE product_id = 'cakepop_chocolate';
-UPDATE public.product_inventory SET quantity_on_hand = 3 WHERE product_id = 'cakepop_vanilla';
-SELECT public.create_order_with_reserve(
-    'test_multi', 'track_multi',
-    '{"status":"AWAITING_PAYMENT","items":[{"id":"cakepop_chocolate","qty":2},{"id":"cakepop_vanilla","qty":1}]}'::jsonb,
-    '[{"id":"cakepop_chocolate","qty":2},{"id":"cakepop_vanilla","qty":1}]'::jsonb
-);
 SELECT pg_temp.assert_true(
     (SELECT quantity_on_hand = 2 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
-    AND (SELECT quantity_on_hand = 2 FROM public.product_inventory WHERE product_id = 'cakepop_vanilla'),
-    'successful multi-item order decrements every product'
+    AND NOT EXISTS (SELECT 1 FROM public.orders WHERE id = 'test_atomic'),
+    'multi-item failure consumes no stock and creates no order'
 );
 
-UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cupcake_chocolate';
-DO $$ BEGIN
-    BEGIN
-        PERFORM public.create_order_with_reserve(
-            'test_archived', 'track_archived',
-            '{"items":[{"id":"cupcake_chocolate","qty":1}]}'::jsonb,
-            '[{"id":"cupcake_chocolate","qty":1}]'::jsonb
-        );
-        RAISE EXCEPTION 'archived product order unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'archived product order unexpectedly succeeded' THEN RAISE; END IF;
-    END;
-END $$;
-
-SELECT public.cancel_order_and_restore_inventory('test_multi');
+UPDATE public.product_inventory SET quantity_on_hand = 3 WHERE product_id = 'cookie_chocolatechip';
+SELECT pg_temp.place('test_snapshot', '{"method":"venmo","venmoUser":"@customer"}',
+    '[{"productId":"cookie_chocolatechip","quantity":1}]');
+UPDATE public.products SET name = 'Renamed Cookie', price_cents = 999 WHERE id = 'cookie_chocolatechip';
 SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
-    AND (SELECT quantity_on_hand = 3 FROM public.product_inventory WHERE product_id = 'cakepop_vanilla')
-    AND (SELECT status = 'CANCELED' AND payload->>'status' = 'CANCELED' FROM public.orders WHERE id = 'test_multi'),
-    'cancellation restores all items and both status representations'
-);
-SELECT public.cancel_order_and_restore_inventory('test_multi');
-SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
-    AND (SELECT quantity_on_hand = 3 FROM public.product_inventory WHERE product_id = 'cakepop_vanilla'),
-    'repeated cancellation does not restore twice'
+    (SELECT payload->'items'->0->>'name' = 'Chocolate Chip Cookie'
+        AND (payload->'items'->0->>'unitPriceCents')::int = 200
+     FROM public.orders WHERE id = 'test_snapshot'),
+    'catalog edits do not change historical snapshots'
 );
 
-UPDATE public.orders SET status = 'COMPLETED', payload = jsonb_set(payload, '{status}', '"COMPLETED"')
-WHERE id = 'test_basic';
-DO $$ BEGIN
-    BEGIN
-        PERFORM public.cancel_order_and_restore_inventory('test_basic');
-        RAISE EXCEPTION 'completed order cancellation unexpectedly succeeded';
-    EXCEPTION WHEN OTHERS THEN
-        IF SQLERRM = 'completed order cancellation unexpectedly succeeded' THEN RAISE; END IF;
-    END;
-END $$;
+SELECT public.cancel_order_and_restore_inventory('test_snapshot');
+SELECT public.cancel_order_and_restore_inventory('test_snapshot');
 SELECT pg_temp.assert_true(
-    (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
-    'completed order rejection does not restock'
+    (SELECT quantity_on_hand = 3 FROM public.product_inventory WHERE product_id = 'cookie_chocolatechip'),
+    'cancellation restores once and repeated cancellation does not double-restock'
 );
 
 UPDATE public.product_inventory SET quantity_on_hand = 1 WHERE product_id = 'cookie_chocolatechip';

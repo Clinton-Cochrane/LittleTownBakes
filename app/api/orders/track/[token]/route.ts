@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import type { OrderRecord, OrderStatus } from "@/lib/orderTypes";
+import type { FulfillmentStatus, OrderRecord } from "@/lib/orderTypes";
 import { isValidTrackingToken, toPublicOrderTracking } from "@/lib/orderTracking";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
@@ -25,7 +25,7 @@ export async function GET(
 
 	if (error || !data) return notFound();
 
-	const payload = data.payload as Pick<OrderRecord, "items" | "totals">;
-	const order = toPublicOrderTracking(data.status as OrderStatus, payload);
+	const payload = data.payload as Pick<OrderRecord, "payment" | "items" | "totals">;
+	const order = toPublicOrderTracking(data.status as FulfillmentStatus, payload);
 	return NextResponse.json(order, { headers: NO_STORE_HEADERS });
 }

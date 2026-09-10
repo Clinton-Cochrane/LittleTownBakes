@@ -37,10 +37,11 @@ export async function GET(req: NextRequest) {
 			id: row.id,
 			trackingToken: row.tracking_token,
 			createdAt: (row.created_at ?? payload?.createdAt) as string,
-			status: row.status as OrderRecord["status"],
+			fulfillmentStatus: row.status as OrderRecord["fulfillmentStatus"],
+			payment: payload.payment as OrderRecord["payment"],
 			customer: (payload?.customer ?? { name: "", email: "" }) as OrderRecord["customer"],
 			items: (payload?.items ?? []) as OrderRecord["items"],
-			totals: (payload?.totals ?? { subtotal: 0, tax: 0, total: 0 }) as OrderRecord["totals"],
+			totals: payload.totals as OrderRecord["totals"],
 		};
 	});
 
