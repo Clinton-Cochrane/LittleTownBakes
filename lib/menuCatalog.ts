@@ -89,7 +89,7 @@ export function buildSections(catalog:MenuCatalog): Section[] {
 			return a.id.localeCompare(b.id);
 		});
         return {category:cat, items};
-    });
+    }).filter((section) => section.items.length > 0);
 
     return sections;
 }

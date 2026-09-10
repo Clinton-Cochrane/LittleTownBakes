@@ -32,8 +32,10 @@ SQL
 for migration in supabase/migrations/*.sql; do
     docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" < "$migration" >/dev/null
 done
-docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \
-    < supabase/tests/current_product_inventory.sql >/dev/null
+for test_file in supabase/tests/*.sql; do
+    docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \
+        < "$test_file" >/dev/null
+done
 
 reservation_one="SELECT public.create_authoritative_order('race_1','track_race_1','{\"name\":\"Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
 reservation_two="SELECT public.create_authoritative_order('race_2','track_race_2','{\"name\":\"Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
