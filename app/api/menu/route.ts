@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import type { Category, Item } from "@/lib/menuCatalog";
+import menuFixture from "@/fixtures/menu.json";
+import type { Category, Item, MenuResponse } from "@/lib/menuCatalog";
 import { getQuantityOnHand, type ProductInventory } from "@/lib/inventory";
 
 type CategoryRow = {
@@ -57,8 +58,22 @@ function mapProduct(row: ProductRow): Item {
 	};
 }
 
+function shouldUseMenuFixture({
+	nodeEnv = process.env.NODE_ENV,
+	menuDataSource = process.env.MENU_DATA_SOURCE,
+}: {
+	nodeEnv?: string;
+	menuDataSource?: string;
+} = {}): boolean {
+	return nodeEnv !== "production" && menuDataSource === "fixture";
+}
+
 export async function GET() {
 	try {
+		if (shouldUseMenuFixture()) {
+			return NextResponse.json(menuFixture satisfies MenuResponse);
+		}
+
 		const supabase = getSupabaseAdmin();
 		const [categoriesResult, productsResult, inventoryResult] = await Promise.all([
 			supabase.from("categories").select("id, name, sort_order"),
@@ -68,9 +83,12 @@ export async function GET() {
 			supabase.from("product_inventory").select("product_id, quantity_on_hand"),
 		]);
 
-		if (categoriesResult.error || productsResult.error) {
+		if (categoriesResult.error || productsResult.error || inventoryResult.error) {
 			throw new Error(
-				categoriesResult.error?.message ?? productsResult.error?.message ?? "Catalog query failed"
+				categoriesResult.error?.message
+					?? productsResult.error?.message
+					?? inventoryResult.error?.message
+					?? "Catalog query failed"
 			);
 		}
 
@@ -80,9 +98,7 @@ export async function GET() {
 		const catalogItems = ((productsResult.data ?? []) as ProductRow[])
 			.map(mapProduct)
 			.sort(compareCatalogEntries);
-		const inventory = inventoryResult.error
-			? []
-			: ((inventoryResult.data ?? []) as ProductInventory[]);
+		const inventory = (inventoryResult.data ?? []) as ProductInventory[];
 
 		const enrichedItems = catalogItems.map((item) => {
 			const remaining = getQuantityOnHand(inventory, item.id);
@@ -102,7 +118,13 @@ export async function GET() {
 			archivedItems: enrichedItems.filter((item) => item.isArchived),
 		});
 	} catch (error) {
-		console.error("[api/menu]", error);
-		return NextResponse.json({ error: "Menu unavailable" }, { status: 500 });
+		console.error("[api/menu] Failed to load the Supabase catalog", error);
+		return NextResponse.json(
+			{
+				error: "Menu is currently unavailable. Please try again later.",
+				code: "MENU_SOURCE_UNAVAILABLE",
+			},
+			{ status: 503 }
+		);
 	}
 }

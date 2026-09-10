@@ -17,6 +17,7 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key used by cookie-backed Auth clients |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `MENU_DATA_SOURCE` | No | Set to `fixture` only for deterministic local development/test menu data; production always uses Supabase |
 | `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
 | `NOTIFICATIONS_ENABLED` | No | Set to `true` to enable configured server-side notification channels (default: disabled) |
 | `RESEND_API_KEY` | For email | Resend API key (server-only) |
@@ -54,6 +55,8 @@ Run migrations in order:
 ## Menu
 
 PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero.
+
+For local UI work without Supabase menu reads, set `MENU_DATA_SOURCE=fixture` in `.env.local` and run `npm run dev`. The committed `fixtures/menu.json` contains in-stock, sold-out, multi-category, and archived examples. Fixture selection is disabled whenever `NODE_ENV=production`, even if `MENU_DATA_SOURCE` is set, so deployed production builds continue to use the Supabase catalog and server-authoritative checkout.
 
 `product_demand_events` preserves anonymous demand for each sold-out or archived period. Database triggers open and close periods when inventory or archive state changes. Lifetime sales remain derived from non-canceled order snapshots and are not combined with demand.
 
