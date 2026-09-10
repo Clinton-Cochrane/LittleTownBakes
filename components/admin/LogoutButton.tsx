@@ -10,7 +10,7 @@ export function LogoutButton() {
 		<form action="/auth/signout" method="post">
 			<button
 				type="submit"
-				className="text-sm text-caramel/90 transition-colors hover:text-caramel hover:underline"
+				className="inline-flex min-h-11 items-center text-sm text-caramel/90 transition-colors hover:text-caramel hover:underline"
 			>
 				Logout
 			</button>
