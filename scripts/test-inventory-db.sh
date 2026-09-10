@@ -45,6 +45,22 @@ for test_file in supabase/tests/*.sql; do
         < "$test_file" >/dev/null
 done
 
+# Concurrent anonymous demand signals must both land on the same open event.
+demand_one="SELECT * FROM public.increment_product_demand('demand-cake');"
+demand_two="SELECT * FROM public.increment_product_demand('demand-cake');"
+docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$demand_one" >"$results_dir/demand-one" 2>&1 &
+pid_demand_one=$!
+docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$demand_two" >"$results_dir/demand-two" 2>&1 &
+pid_demand_two=$!
+wait "$pid_demand_one"
+wait "$pid_demand_two"
+demand_count="$(docker exec "$container" psql -At -U postgres -d "$database" -c "SELECT demand_count FROM public.product_demand_events WHERE product_id = 'demand-cake' AND closed_at IS NULL;")"
+if [[ "$demand_count" -ne 2 ]]; then
+    cat "$results_dir/demand-one" "$results_dir/demand-two"
+    echo "demand race assertion failed: count=$demand_count" >&2
+    exit 1
+fi
+
 reservation_one="SELECT public.create_authoritative_order('race_1','track_race_1','{\"name\":\"Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
 reservation_two="SELECT public.create_authoritative_order('race_2','track_race_2','{\"name\":\"Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
 
@@ -85,4 +101,4 @@ if [[ "$admin_race_quantity" -ne 5 ]]; then
     exit 1
 fi
 
-echo "Inventory database tests passed (order races and admin delta preserved)."
+echo "Database tests passed (demand/order races and admin delta preserved)."

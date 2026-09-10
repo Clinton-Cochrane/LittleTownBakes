@@ -27,7 +27,9 @@ describe("/api/admin/products", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.auth.mockResolvedValue({ authorized: true, admin: { id: "admin" } });
-		mocks.list.mockResolvedValue([{ id: "product-1" }]);
+		mocks.list.mockResolvedValue([{
+			id: "product-1", soldCount: 12, demandCount: 5, currentDemandCount: 2,
+		}]);
 		mocks.create.mockResolvedValue({ id: "generated-id", isArchived: false, quantityOnHand: 0 });
 	});
 
@@ -63,6 +65,13 @@ describe("/api/admin/products", () => {
 			image: null,
 		});
 		expect(await response.json()).toMatchObject({ id: "generated-id", isArchived: false, quantityOnHand: 0 });
+	});
+
+	it("returns sales and demand aggregates in the existing product response", async () => {
+		const response = await GET();
+		expect(await response.json()).toEqual([{
+			id: "product-1", soldCount: 12, demandCount: 5, currentDemandCount: 2,
+		}]);
 	});
 
 	it("returns predictable validation errors", async () => {

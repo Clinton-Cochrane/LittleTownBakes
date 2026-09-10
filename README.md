@@ -24,20 +24,23 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 Run migrations in order:
 
 1. `20250313000000_create_inventory_slots.sql` – inventory per item per period
-2. `20250313000001_create_flavor_requests.sql` – customer flavor requests
+2. `20250313000001_create_flavor_requests.sql` – legacy customer flavor requests (removed by migration 12)
 3. `20250313100000_atomic_reserve_inventory.sql` – orders table + atomic reserve (prevents overselling)
 4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
 5. `20260909040137_create_catalog.sql` – product/category catalog tables and initial seed data
 6. `20260909150000_current_product_inventory.sql` – replaces period slots with current on-hand stock and atomic cancellation restoration
 7. `20260909200000_server_authoritative_checkout.sql` – server-authoritative catalog validation, pricing, order snapshots, and private order access
-8. `20260909201000_private_flavor_requests.sql` – prevents browser roles from directly reading or modifying customer flavor requests
+8. `20260909201000_private_flavor_requests.sql` – protects the legacy customer flavor-request table before its removal
 9. `20260909210000_admin_catalog_reordering.sql` – atomic admin category and product ordering
 10. `20260910010000_atomic_admin_inventory_adjustment.sql` – concurrency-safe admin inventory adjustments
 11. `20260910041324_add_product_image_storage.sql` – public product-image bucket with restricted uploads
+12. `20260910173807_anonymous_product_demand_history.sql` – anonymous demand-event history, lifecycle triggers, atomic signals, admin aggregates, and legacy PII table removal
 
 ## Menu
 
 PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero.
+
+`product_demand_events` preserves anonymous demand for each sold-out or archived period. Database triggers open and close periods when inventory or archive state changes. Lifetime sales remain derived from non-canceled order snapshots and are not combined with demand.
 
 Product photos uploaded by an admin use the public `product-images` Supabase Storage bucket, while `products.image` stores the resulting public URL. Public read is intentional for menu assets. Upload capabilities, finalization, and conservative replacement cleanup require the existing server-verified admin role; the service-role key never reaches the browser. The bucket accepts only JPEG, PNG, WebP, and GIF files up to 15 MiB. Existing `/img/...` values continue to work and are never treated as managed Storage objects during cleanup.
 

@@ -62,7 +62,12 @@ export function AdminMenu() {
 	}
 
 	function updateProduct(saved: AdminMenuProduct) {
-		setProducts((current) => current.map((product) => product.id === saved.id ? saved : product));
+		setProducts((current) => current.map((product) => product.id === saved.id ? {
+			...saved,
+			soldCount: saved.soldCount ?? product.soldCount,
+			demandCount: saved.demandCount ?? product.demandCount,
+			currentDemandCount: saved.currentDemandCount ?? product.currentDemandCount,
+		} : product));
 	}
 
 	async function refreshProduct(productId: string) {
@@ -112,8 +117,13 @@ export function AdminMenu() {
 		if (!response.ok) throw new Error(await responseError(response, "Product could not be saved."));
 		const saved = await response.json() as AdminMenuProduct;
 		setProducts((current) => current.some((candidate) => candidate.id === saved.id)
-			? current.map((candidate) => candidate.id === saved.id ? saved : candidate)
-			: [...current, saved]);
+			? current.map((candidate) => candidate.id === saved.id ? {
+				...saved,
+				soldCount: saved.soldCount ?? candidate.soldCount,
+				demandCount: saved.demandCount ?? candidate.demandCount,
+				currentDemandCount: saved.currentDemandCount ?? candidate.currentDemandCount,
+			} : candidate)
+			: [...current, { ...saved, soldCount: saved.soldCount ?? 0, demandCount: saved.demandCount ?? 0, currentDemandCount: saved.currentDemandCount ?? 0 }]);
 		if (!product) chooseView("current");
 		return saved;
 	}

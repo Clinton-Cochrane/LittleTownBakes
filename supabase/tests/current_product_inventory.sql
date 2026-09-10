@@ -37,29 +37,6 @@ SELECT pg_temp.assert_true(
     'service role retains server-side orders access'
 );
 SELECT pg_temp.assert_true(
-    (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.flavor_requests'::regclass),
-    'flavor_requests has row-level security enabled'
-);
-SELECT pg_temp.assert_true(
-    NOT has_table_privilege('anon', 'public.flavor_requests', 'SELECT')
-    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'INSERT')
-    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'UPDATE')
-    AND NOT has_table_privilege('anon', 'public.flavor_requests', 'DELETE')
-    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'SELECT')
-    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'INSERT')
-    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'UPDATE')
-    AND NOT has_table_privilege('authenticated', 'public.flavor_requests', 'DELETE'),
-    'browser roles have no direct flavor_requests privileges'
-);
-SELECT pg_temp.assert_true(
-    has_table_privilege('service_role', 'public.flavor_requests', 'SELECT')
-    AND has_table_privilege('service_role', 'public.flavor_requests', 'INSERT')
-    AND has_table_privilege('service_role', 'public.flavor_requests', 'UPDATE')
-    AND has_table_privilege('service_role', 'public.flavor_requests', 'DELETE'),
-    'service role retains server-side flavor_requests access'
-);
-
-SELECT pg_temp.assert_true(
     (SELECT count(*) = (SELECT count(*) FROM public.products) FROM public.product_inventory),
     'migration seeds every existing product'
 );

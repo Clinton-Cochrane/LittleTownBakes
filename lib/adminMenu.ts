@@ -9,6 +9,9 @@ export type AdminMenuProduct = {
 	isArchived: boolean;
 	sortOrder: number;
 	quantityOnHand: number;
+	soldCount: number;
+	demandCount: number;
+	currentDemandCount: number;
 };
 
 export type AdminMenuCategory = {

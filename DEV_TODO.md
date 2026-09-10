@@ -9,10 +9,7 @@
   - `SUPABASE_SERVICE_ROLE_KEY` (from Project Settings → API)
   - `NEXT_PUBLIC_VENMO_HANDLE` (optional, e.g. @LittleTownBakes)
 - [ ] Create or invite the bakery owner under Authentication → Users and assign `app_metadata.role` to `admin` with the server-side Supabase Admin API (see README).
-- [ ] Run migrations in order (Supabase SQL Editor or CLI):
-  1. `supabase/migrations/20250313000000_create_inventory_slots.sql`
-  2. `supabase/migrations/20250313000001_create_flavor_requests.sql`
-  3. `supabase/migrations/20250313100000_atomic_reserve_inventory.sql`
+- [ ] Run every migration in `supabase/migrations/` in filename order (Supabase CLI recommended).
 
 ## Misc
 

@@ -34,3 +34,21 @@ describe("MenuCard product images", () => {
 		expect(render(gifUrl)).toContain(`src="${gifUrl}"`);
 	});
 });
+
+describe("MenuCard availability", () => {
+	it("offers an anonymous demand action when sold out", () => {
+		const item: Item = { id: "cake", name: "Cake", categoryId: "cakes", basePrice: 4, availability: { inStock: false } };
+		const html = renderToStaticMarkup(createElement(MenuCard, {
+			item, available: false, formatCurrency: () => "$4.00", qty: 0, maxPerOrder: 6,
+			onAdd: vi.fn(), onSetQty: vi.fn(),
+		}));
+		expect(html).toContain("Sold Out");
+		expect(html).toContain("Bummed I missed this");
+		expect(html).not.toContain("Add To Cart");
+	});
+
+	it("keeps in-stock products orderable", () => {
+		expect(render()).toContain("Add To Cart");
+		expect(render()).not.toContain("Bummed I missed this");
+	});
+});

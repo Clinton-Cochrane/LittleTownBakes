@@ -37,6 +37,7 @@ export function MenuProductCard({ product, pending = 0, error, onAdjust, onEdit,
 				<div className="min-w-0 flex-1">
 					<h2 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h2>
 					<p className={`mt-1 text-sm font-semibold ${soldOut ? "text-berry" : "text-success"}`}>{soldOut ? "Sold Out · 0 available" : `${product.quantityOnHand} available`}</p>
+					<p className="mt-1 text-xs text-sage">{product.soldCount} sold · {product.demandCount} demand signals</p>
 					{pending > 0 && <p className="mt-1 text-xs text-sage" role="status">Updating {pending === 1 ? "change" : `${pending} changes`}…</p>}
 				</div>
 				<div className="flex items-center justify-between gap-2 sm:justify-end">
@@ -63,6 +64,7 @@ export function PastFlavorCard({ product, error, onEdit, onRestore }: { product:
 		<article className="card-warm p-4 sm:p-5">
 			<h2 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h2>
 			{product.description && <p className="mt-1 text-sm text-sage">{product.description}</p>}
+			<p className="mt-2 text-xs text-sage">{product.soldCount} sold · {product.demandCount} demand signals</p>
 			{error && <p className="mt-3 rounded-lg bg-berry/10 px-3 py-2 text-sm text-berry" role="alert">{error}</p>}
 			<div className="mt-4 flex gap-3"><button type="button" className="btn-secondary min-h-11" onClick={onEdit}>Edit</button><button type="button" className="btn-primary" onClick={onRestore}>Restore</button></div>
 		</article>

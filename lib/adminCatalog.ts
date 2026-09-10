@@ -44,7 +44,12 @@ type CategoryRow = {
 	updated_at: string;
 };
 
-type InventoryRow = { product_id: string; quantity_on_hand: number };
+type ProductStatsRow = ProductRow & {
+	quantity_on_hand: number;
+	sold_count: number | string;
+	demand_count: number | string;
+	current_demand_count: number | string;
+};
 
 const productFields = "id, category_id, name, description, price_cents, image, max_per_order, is_archived, sort_order, created_at, updated_at";
 const categoryFields = "id, name, sort_order, created_at, updated_at";
@@ -185,6 +190,15 @@ function mapProduct(row: ProductRow, quantityOnHand: number) {
 	};
 }
 
+function mapProductWithStats(row: ProductStatsRow) {
+	return {
+		...mapProduct(row, row.quantity_on_hand),
+		soldCount: Number(row.sold_count),
+		demandCount: Number(row.demand_count),
+		currentDemandCount: Number(row.current_demand_count),
+	};
+}
+
 function databaseFailure(operation: string, error: unknown): never {
 	console.error(`[admin catalog] ${operation} failed`, error);
 	throw new CatalogRequestError(500, "Catalog operation failed");
@@ -248,15 +262,9 @@ export async function updateCategory(id: string, input: CategoryInput) {
 }
 
 export async function listProducts() {
-	const supabase = getSupabaseAdmin();
-	const [productsResult, inventoryResult] = await Promise.all([
-		supabase.from("products").select(productFields).order("category_id").order("sort_order").order("name").order("id"),
-		supabase.from("product_inventory").select("product_id, quantity_on_hand"),
-	]);
-	if (productsResult.error) databaseFailure("list products", productsResult.error);
-	if (inventoryResult.error) databaseFailure("list product inventory", inventoryResult.error);
-	const inventory = new Map(((inventoryResult.data ?? []) as InventoryRow[]).map((row) => [row.product_id, row.quantity_on_hand]));
-	return ((productsResult.data ?? []) as ProductRow[]).map((row) => mapProduct(row, inventory.get(row.id) ?? 0));
+	const { data, error } = await getSupabaseAdmin().rpc("list_admin_products_with_stats");
+	if (error) databaseFailure("list products", error);
+	return ((data ?? []) as ProductStatsRow[]).map(mapProductWithStats);
 }
 
 async function getProduct(id: string) {
