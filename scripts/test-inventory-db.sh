@@ -27,6 +27,14 @@ CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN BYPASSRLS;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+CREATE SCHEMA storage;
+CREATE TABLE storage.buckets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    public BOOLEAN NOT NULL DEFAULT false,
+    file_size_limit BIGINT,
+    allowed_mime_types TEXT[]
+);
 SQL
 
 for migration in supabase/migrations/*.sql; do

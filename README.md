@@ -31,10 +31,15 @@ Run migrations in order:
 6. `20260909150000_current_product_inventory.sql` – replaces period slots with current on-hand stock and atomic cancellation restoration
 7. `20260909200000_server_authoritative_checkout.sql` – server-authoritative catalog validation, pricing, order snapshots, and private order access
 8. `20260909201000_private_flavor_requests.sql` – prevents browser roles from directly reading or modifying customer flavor requests
+9. `20260909210000_admin_catalog_reordering.sql` – atomic admin category and product ordering
+10. `20260910010000_atomic_admin_inventory_adjustment.sql` – concurrency-safe admin inventory adjustments
+11. `20260910041324_add_product_image_storage.sql` – public product-image bucket with restricted uploads
 
 ## Menu
 
-PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero. Product images remain under `public/img/`, and `products.image` stores their public paths (for example, `/img/cakepop_chocolate.png`).
+PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero.
+
+Product photos uploaded by an admin use the public `product-images` Supabase Storage bucket, while `products.image` stores the resulting public URL. Public read is intentional for menu assets. Upload capabilities, finalization, and conservative replacement cleanup require the existing server-verified admin role; the service-role key never reaches the browser. The bucket accepts only JPEG, PNG, WebP, and GIF files up to 15 MiB. Existing `/img/...` values continue to work and are never treated as managed Storage objects during cleanup.
 
 ## About Page
 

@@ -103,8 +103,7 @@ export function AdminMenu() {
 		});
 	}
 
-	async function saveProduct(values: { name: string; description: string; priceCents: number; categoryId: string; maxPerOrder: number }) {
-		const product = editing ?? null;
+	async function saveProduct(values: { name: string; description: string; priceCents: number; categoryId: string; maxPerOrder: number }, product: AdminMenuProduct | null) {
 		const response = await fetch(product ? `/api/admin/products/${encodeURIComponent(product.id)}` : "/api/admin/products", {
 			method: product ? "PATCH" : "POST",
 			headers: { "Content-Type": "application/json" },
@@ -112,11 +111,11 @@ export function AdminMenu() {
 		});
 		if (!response.ok) throw new Error(await responseError(response, "Product could not be saved."));
 		const saved = await response.json() as AdminMenuProduct;
-		setProducts((current) => product
+		setProducts((current) => current.some((candidate) => candidate.id === saved.id)
 			? current.map((candidate) => candidate.id === saved.id ? saved : candidate)
 			: [...current, saved]);
-		setEditing(undefined);
 		if (!product) chooseView("current");
+		return saved;
 	}
 
 	async function archive(product: AdminMenuProduct) {
@@ -184,7 +183,7 @@ export function AdminMenu() {
 				{view === "current" ? views.active.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />) : views.archived.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
 				{(view === "current" ? views.active : views.archived).length === 0 && <p className="card-warm p-5 text-sage">{view === "current" ? "No products are on the current menu yet." : "No Past Flavors yet."}</p>}
 			</section>
-			{editing !== undefined && <ProductForm key={editing?.id ?? "new"} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} />}
+			{editing !== undefined && <ProductForm key={editing?.id ?? "new"} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} onProductSaved={updateProduct} onComplete={() => setEditing(undefined)} />}
 		</>
 	);
 }
