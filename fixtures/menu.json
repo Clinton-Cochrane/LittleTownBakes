@@ -1,0 +1,98 @@
+{
+  "categories": [
+    {
+      "id": "cake-pops",
+      "name": "Cake Pops",
+      "sortOrder": 10
+    },
+    {
+      "id": "cookies",
+      "name": "Cookies",
+      "sortOrder": 20
+    }
+  ],
+  "items": [
+    {
+      "id": "birthday-cake-pop",
+      "name": "Birthday Cake Pop",
+      "categoryId": "cake-pops",
+      "description": "Vanilla cake and buttercream dipped in white chocolate with rainbow sprinkles.",
+      "basePrice": 2.5,
+      "image": "/img/cakepop_vanilla.png",
+      "maxPerOrder": 12,
+      "isArchived": false,
+      "sortOrder": 10,
+      "remaining": 8,
+      "available": true,
+      "availability": {
+        "inStock": true
+      }
+    },
+    {
+      "id": "chocolate-cake-pop",
+      "name": "Chocolate Cake Pop",
+      "categoryId": "cake-pops",
+      "description": "Rich chocolate cake dipped in dark chocolate and topped with sprinkles.",
+      "basePrice": 2.5,
+      "image": "/img/cakepop_chocolate.png",
+      "maxPerOrder": 12,
+      "isArchived": false,
+      "sortOrder": 20,
+      "remaining": 4,
+      "available": true,
+      "availability": {
+        "inStock": true
+      }
+    },
+    {
+      "id": "chocolate-chip-cookie",
+      "name": "Chocolate Chip Cookie",
+      "categoryId": "cookies",
+      "description": "A chewy cookie loaded with semisweet chocolate chips.",
+      "basePrice": 2,
+      "image": "/img/cookie_chocolatechip.png",
+      "maxPerOrder": 24,
+      "isArchived": false,
+      "sortOrder": 30,
+      "remaining": 12,
+      "available": true,
+      "availability": {
+        "inStock": true
+      }
+    },
+    {
+      "id": "snickerdoodle-cookie",
+      "name": "Snickerdoodle Cookie",
+      "categoryId": "cookies",
+      "description": "A soft cinnamon-sugar cookie that is temporarily sold out.",
+      "basePrice": 2,
+      "image": "/img/cookie_snickerdoodle.png",
+      "maxPerOrder": 24,
+      "isArchived": false,
+      "sortOrder": 40,
+      "remaining": 0,
+      "available": false,
+      "availability": {
+        "inStock": false
+      }
+    }
+  ],
+  "archivedItems": [
+    {
+      "id": "red-velvet-cake-pop",
+      "name": "Red Velvet Cake Pop",
+      "categoryId": "cake-pops",
+      "description": "A past flavor made with red velvet cake and cream cheese frosting.",
+      "basePrice": 2.75,
+      "image": "/img/cupcake_redvelvet.png",
+      "maxPerOrder": 12,
+      "isArchived": true,
+      "sortOrder": 50,
+      "remaining": 0,
+      "available": false,
+      "availability": {
+        "inStock": false
+      }
+    }
+  ]
+}

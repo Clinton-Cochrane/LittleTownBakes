@@ -34,6 +34,12 @@ export type MenuCatalog = {
     items: Item[];
 };
 
+export type MenuResponse = {
+	categories: Category[];
+	items: EnrichedItem[];
+	archivedItems: EnrichedItem[];
+};
+
 export type Section = {
     category: Category;
     items: Item[];
