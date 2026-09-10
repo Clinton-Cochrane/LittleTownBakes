@@ -9,6 +9,8 @@ import {
 const links = [
 	{ href: "/admin/orders", label: "Orders", Icon: OrdersNavIcon },
 	{ href: "/admin/menu", label: "Menu", Icon: MenuNavIcon },
+	{ href: "/admin/inventory", label: "Inventory", Icon: MenuNavIcon },
+	{ href: "/admin/availability", label: "Pickup", Icon: OrdersNavIcon },
 	{ href: "/admin/menu?view=past", label: "Past Flavors", Icon: PastFlavorsNavIcon },
 ];
 

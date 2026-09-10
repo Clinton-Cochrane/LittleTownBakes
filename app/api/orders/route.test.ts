@@ -11,6 +11,7 @@ const authoritativeOrder = {
 	id: "ord_server", createdAt: "2026-09-09T20:00:00.000Z", fulfillmentStatus: "RECEIVED",
 	payment: { method: "cash", status: "PENDING" },
 	customer: { name: "Alice Baker", email: "alice@example.com" },
+	pickup: { windowId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 	items: [{ productId: "cake", name: "Real Cake", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],
 	totals: { subtotalCents: 5000, totalCents: 5000 },
 };
@@ -21,7 +22,8 @@ function request(body: unknown) {
 
 const trustedRequest = {
 	customer: { name: "Alice Baker", email: "alice@example.com" },
-	payment: { method: "cash" }, items: [{ productId: "cake", quantity: 2 }],
+	payment: { method: "cash" }, pickupWindowId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+	items: [{ productId: "cake", quantity: 2 }],
 };
 
 describe("POST /api/orders", () => {
@@ -41,6 +43,7 @@ describe("POST /api/orders", () => {
 		expect(mockRpc).toHaveBeenCalledWith("create_authoritative_order", expect.any(Object));
 		expect(args.p_customer).toEqual(trustedRequest.customer);
 		expect(args.p_payment).toEqual({ method: "cash" });
+		expect(args.p_pickup_window_id).toBe(trustedRequest.pickupWindowId);
 		expect(args.p_items).toEqual([{ productId: "cake", quantity: 2 }]);
 		expect(JSON.stringify(args)).not.toContain("Fake");
 		expect(body).toMatchObject({ trackingToken: expect.any(String), order: authoritativeOrder });
@@ -77,6 +80,24 @@ describe("POST /api/orders", () => {
 
 		await POST(request(trustedRequest));
 
+		expect(mockNotify).not.toHaveBeenCalled();
+	});
+
+	it("rejects a missing pickup selection before calling the database", async () => {
+		const response = await POST(request({ ...trustedRequest, pickupWindowId: undefined }));
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({ code: "INVALID_PICKUP_WINDOW" });
+		expect(mockRpc).not.toHaveBeenCalled();
+	});
+
+	it("returns a clean conflict for an unknown, disabled, edited, or cutoff pickup window", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: { message: "PICKUP_WINDOW_UNAVAILABLE: private detail" } });
+		const response = await POST(request(trustedRequest));
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			code: "PICKUP_WINDOW_UNAVAILABLE",
+			error: "That pickup time is no longer available. Please choose another pickup time.",
+		});
 		expect(mockNotify).not.toHaveBeenCalled();
 	});
 

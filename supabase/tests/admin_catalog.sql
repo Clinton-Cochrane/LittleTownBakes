@@ -5,6 +5,10 @@ BEGIN
 END;
 $$;
 
+INSERT INTO public.pickup_windows (id, start_at, end_at, enabled)
+VALUES ('11111111-1111-4111-8111-111111111111', '2099-09-18T18:42:00-07:00', '2099-09-18T19:25:00-07:00', true)
+ON CONFLICT (id) DO NOTHING;
+
 SELECT pg_temp.assert_catalog(
     EXISTS (SELECT 1 FROM public.products WHERE id = 'cakepop_chocolate')
     AND EXISTS (SELECT 1 FROM public.categories WHERE id = 'cakepops'),
@@ -43,7 +47,8 @@ SELECT public.create_authoritative_order(
     'track_admin_catalog_history',
     '{"name":"Catalog Test","email":"catalog@example.com"}'::jsonb,
     '{"method":"cash"}'::jsonb,
-    '[{"productId":"00000000-0000-4000-8000-000000000011","quantity":1}]'::jsonb
+    '[{"productId":"00000000-0000-4000-8000-000000000011","quantity":1}]'::jsonb,
+    '11111111-1111-4111-8111-111111111111'
 );
 UPDATE public.products SET is_archived = true WHERE id = '00000000-0000-4000-8000-000000000011';
 UPDATE public.products SET is_archived = false WHERE id = '00000000-0000-4000-8000-000000000011';

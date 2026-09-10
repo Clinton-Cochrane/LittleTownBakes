@@ -10,6 +10,7 @@ const notification: OrderNotification = {
 		id: "ord_123", createdAt: "2026-09-10T18:00:00.000Z", fulfillmentStatus: "RECEIVED",
 		customer: { name: "Alice <Baker>", email: "alice@example.com", phone: "555-0100", notes: "Pickup after 4 & ring bell" },
 		payment: { method: "cash", status: "PENDING" },
+		pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 		items: [{ productId: "cake", name: "Chocolate & Vanilla", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],
 		totals: { subtotalCents: 5000, totalCents: 5000 },
 	},
@@ -34,6 +35,7 @@ describe("notification channels", () => {
 		expect(message.text).toContain("Pickup after 4 & ring bell");
 		expect(message.text).toContain("Chocolate & Vanilla x 2 — $50.00");
 		expect(message.text).toContain("Payment: cash (PENDING)");
+		expect(message.text).toContain("Pickup: Friday, Sep 18 · 6:42 PM–7:25 PM Pacific Time");
 		expect(message.text).toContain("Admin orders: https://bakery.example/admin/orders");
 	});
 

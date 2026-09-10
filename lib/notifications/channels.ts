@@ -1,6 +1,7 @@
 import type {
 	EmailMessage, EmailProvider, NotificationChannel, OrderNotification, PushProvider, SmsProvider,
 } from "./types";
+import { formatPickupWindow } from "../pickupWindows";
 
 function currency(cents: number): string {
 	return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -26,6 +27,7 @@ function renderEmail(notification: OrderNotification, from: string, to: string):
 		`Email: ${order.customer.email}`,
 		order.customer.phone ? `Phone: ${order.customer.phone}` : undefined,
 		order.customer.notes ? `Customer notes / pickup information: ${order.customer.notes}` : undefined,
+		order.pickup ? `Pickup: ${formatPickupWindow(order.pickup, "short")} Pacific Time` : "Pickup: not specified on this order",
 		"",
 		"Items:",
 		...itemLines,
@@ -36,7 +38,6 @@ function renderEmail(notification: OrderNotification, from: string, to: string):
 		`Fulfillment: ${order.fulfillmentStatus}`,
 		order.payment.venmoUser ? `Venmo user: ${order.payment.venmoUser}` : undefined,
 		order.payment.note ? `Payment note: ${order.payment.note}` : undefined,
-		order.customer.notes ? undefined : "Pickup information: not specified on this order",
 		notification.adminUrl ? `Admin orders: ${notification.adminUrl}` : undefined,
 	].filter((line): line is string => line !== undefined);
 	const text = detailLines.join("\n");

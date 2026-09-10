@@ -10,6 +10,7 @@ describe("GET /api/orders/track/[token]", () => {
 		vi.clearAllMocks();
 		mockEq.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { status: "RECEIVED", payload: {
 			payment: { method: "cash", status: "PENDING" },
+			pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 			items: [{ productId: "cake", name: "Cake", unitPriceCents: 2500, quantity: 1, lineTotalCents: 2500 }],
 			totals: { subtotalCents: 2500, totalCents: 2500 }, customer: { name: "Private", email: "private@example.com" },
 		} }, error: null }) });
@@ -19,8 +20,14 @@ describe("GET /api/orders/track/[token]", () => {
 		const response = await GET(new NextRequest(`http://localhost/api/orders/track/${token}`), { params: Promise.resolve({ token }) });
 		const body = await response.json();
 		expect(response.status).toBe(200);
-		expect(body).toMatchObject({ fulfillmentStatus: "RECEIVED", payment: { method: "cash", status: "PENDING" }, totals: { totalCents: 2500 } });
+		expect(body).toMatchObject({
+			fulfillmentStatus: "RECEIVED",
+			payment: { method: "cash", status: "PENDING" },
+			pickup: { startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
+			totals: { totalCents: 2500 },
+		});
 		expect(body).not.toHaveProperty("customer");
+		expect(body.pickup).not.toHaveProperty("windowId");
 	});
 	it("rejects invalid tokens before querying", async () => {
 		const response = await GET(new NextRequest("http://localhost/api/orders/track/bad"), { params: Promise.resolve({ token: "bad" }) });

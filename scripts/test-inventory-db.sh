@@ -61,8 +61,8 @@ if [[ "$demand_count" -ne 2 ]]; then
     exit 1
 fi
 
-reservation_one="SELECT public.create_authoritative_order('race_1','track_race_1','{\"name\":\"Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
-reservation_two="SELECT public.create_authoritative_order('race_2','track_race_2','{\"name\":\"Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
+reservation_one="SELECT public.create_authoritative_order('race_1','track_race_1','{\"name\":\"Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb,'11111111-1111-4111-8111-111111111111');"
+reservation_two="SELECT public.create_authoritative_order('race_2','track_race_2','{\"name\":\"Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb,'11111111-1111-4111-8111-111111111111');"
 
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$reservation_one" >"$results_dir/one" 2>&1 &
 pid_one=$!
@@ -86,7 +86,7 @@ fi
 # starting stock 5 becomes 5 after one decrement and one increment.
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \
     -c "UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cakepop_vanilla'; DELETE FROM public.orders WHERE id LIKE 'admin_race_%';" >/dev/null
-admin_race_order="SELECT public.create_authoritative_order('admin_race_order','track_admin_race','{\"name\":\"Race Customer\",\"email\":\"race@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cakepop_vanilla\",\"quantity\":1}]'::jsonb);"
+admin_race_order="SELECT public.create_authoritative_order('admin_race_order','track_admin_race','{\"name\":\"Race Customer\",\"email\":\"race@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cakepop_vanilla\",\"quantity\":1}]'::jsonb,'11111111-1111-4111-8111-111111111111');"
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$admin_race_order" >"$results_dir/order" 2>&1 &
 pid_order=$!
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "SELECT public.adjust_product_inventory('cakepop_vanilla', 1);" >"$results_dir/admin" 2>&1 &

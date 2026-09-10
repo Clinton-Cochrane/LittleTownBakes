@@ -13,6 +13,7 @@ const EXPECTED_ERRORS = {
 	OUT_OF_STOCK: { status: 409, error: "One or more products do not have enough stock." },
 	INVALID_QUANTITY: { status: 400, error: "Quantities must be positive whole numbers." },
 	INVALID_PAYMENT_METHOD: { status: 400, error: "Choose a valid payment method." },
+	PICKUP_WINDOW_UNAVAILABLE: { status: 409, error: "That pickup time is no longer available. Please choose another pickup time." },
 } as const;
 
 function databaseError(message?: string) {
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
 		const { data, error } = await getSupabaseAdmin().rpc("create_authoritative_order", {
 			p_order_id: id, p_tracking_token: trackingToken,
 			p_customer: validation.data.customer, p_payment: validation.data.payment, p_items: validation.data.items,
+			p_pickup_window_id: validation.data.pickupWindowId,
 		});
 		if (error) { console.error("[orders] authoritative order failed", error); return databaseError(error.message); }
 		const order = data?.order as OrderRecord | undefined;

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import type { PublicOrderTracking } from "@/lib/orderTypes";
 import { formatCurrency } from "@/lib/menuCatalog";
+import { formatPickupWindow } from "@/lib/pickupWindows";
 
 export default function OrderPage() {
 	const { id: token } = useParams<{ id: string }>();
@@ -68,6 +69,13 @@ export default function OrderPage() {
 				<span className="ml-4 text-sage">Payment:</span>{" "}
 				<strong className="text-cocoa">{order.payment.status}</strong>
 			</div>
+			{order.pickup && (
+				<div className="mb-6 rounded-lg border border-crust bg-wheat px-4 py-3 text-cocoa">
+					<span className="text-sage">Pickup:</span>{" "}
+					<strong>{formatPickupWindow(order.pickup)}</strong>
+					<span className="ml-2 text-sm text-sage">Pacific Time</span>
+				</div>
+			)}
 
 			<section>
 				{order.items.map((i, index) => (

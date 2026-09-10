@@ -8,6 +8,7 @@ const order = {
 	fulfillmentStatus: "RECEIVED" as const,
 	payment: { method: "venmo" as const, status: "PAID" as const, venmoUser: "@alice" },
 	customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Friday pickup" },
+	pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 	items: [{ productId: "cake", name: "Chocolate Cake", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],
 	totals: { subtotalCents: 5000, totalCents: 5000 },
 };

@@ -7,10 +7,13 @@ const LIMITS = { name: 200, email: 254, phone: 30, notes: 2000, productId: 100, 
 type TrustedOrderRequest = {
 	customer: { name: string; email: string; phone?: string; notes?: string };
 	payment: { method: PaymentMethod; venmoUser?: string; note?: string };
+	pickupWindowId: string;
 	items: { productId: string; quantity: number }[];
 };
 
-type ValidationError = { ok: false; code: "INVALID_ORDER" | "INVALID_QUANTITY" | "INVALID_PAYMENT_METHOD"; error: string };
+type ValidationError = { ok: false; code: "INVALID_ORDER" | "INVALID_QUANTITY" | "INVALID_PAYMENT_METHOD" | "INVALID_PICKUP_WINDOW"; error: string };
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function optionalString(value: unknown, field: string, max: number): string | ValidationError | undefined {
 	if (value === undefined || value === null || value === "") return undefined;
@@ -23,6 +26,9 @@ export function validateOrderPayload(body: unknown): { ok: true; data: TrustedOr
 	const input = body as Record<string, unknown>;
 	if (!input.customer || typeof input.customer !== "object") return { ok: false, code: "INVALID_ORDER", error: "Customer information is required" };
 	if (!input.payment || typeof input.payment !== "object") return { ok: false, code: "INVALID_PAYMENT_METHOD", error: "Payment method is required" };
+	if (typeof input.pickupWindowId !== "string" || !UUID_PATTERN.test(input.pickupWindowId)) {
+		return { ok: false, code: "INVALID_PICKUP_WINDOW", error: "Choose an available pickup time." };
+	}
 	if (!Array.isArray(input.items) || input.items.length === 0 || input.items.length > MAX_ITEMS) return { ok: false, code: "INVALID_ORDER", error: `Order must contain between 1 and ${MAX_ITEMS} items` };
 
 	const customerInput = input.customer as Record<string, unknown>;
@@ -60,6 +66,7 @@ export function validateOrderPayload(body: unknown): { ok: true; data: TrustedOr
 	return { ok: true, data: {
 		customer: { name, email, ...(phone && { phone }), ...(notes && { notes }) },
 		payment: { method, ...(method === "venmo" && venmoUser && { venmoUser }), ...(note && { note }) },
+		pickupWindowId: input.pickupWindowId,
 		items: [...quantities].map(([productId, quantity]) => ({ productId, quantity })),
 	} };
 }
