@@ -118,10 +118,7 @@ export default function CartSheet({ open, onClose, onCheckout }: CartSheetProps)
 							<span className="text-sm text-sage">Subtotal</span>
 							<span className="font-semibold">{formatCurrency(subtotal)}</span>
 						</div>
-						<div className="flex justify-between">
-							<span className="text-sm text-sage">Tax</span>
-							<span className="text-sm text-sage">Calculated at checkout</span>
-						</div>
+						<p className="text-xs text-sage">Final pricing is confirmed from the current catalog when the order is placed.</p>
 						<div className="flex justify-between font-bold">
 							<span>Total</span>
 							<span className="text-lg">{formatCurrency(subtotal)}</span>

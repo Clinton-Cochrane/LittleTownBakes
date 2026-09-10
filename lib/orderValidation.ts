@@ -1,190 +1,65 @@
-/**
- * Server-side validation for order API payloads.
- * Validates structure, types, and constraints before persisting.
- */
-
-import type { OrderRecord } from "./orderTypes";
+import type { PaymentMethod } from "./orderTypes";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_NAME_LEN = 200;
-const MAX_EMAIL_LEN = 254;
-const MAX_PHONE_LEN = 30;
-const MAX_NOTES_LEN = 2000;
-const MAX_VENMO_USER_LEN = 50;
-const MAX_VENMO_NOTE_LEN = 200;
 const MAX_ITEMS = 50;
-const MAX_ITEM_NAME_LEN = 200;
-const MAX_ITEM_ID_LEN = 100;
+const LIMITS = { name: 200, email: 254, phone: 30, notes: 2000, productId: 100, venmoUser: 50, paymentNote: 200 };
 
-export function validateOrderPayload(
-	body: unknown
-): { ok: true; data: Pick<OrderRecord, "customer" | "items" | "totals"> } | { ok: false; error: string } {
-	if (!body || typeof body !== "object") {
-		return { ok: false, error: "Invalid request body" };
+type TrustedOrderRequest = {
+	customer: { name: string; email: string; phone?: string; notes?: string };
+	payment: { method: PaymentMethod; venmoUser?: string; note?: string };
+	items: { productId: string; quantity: number }[];
+};
+
+type ValidationError = { ok: false; code: "INVALID_ORDER" | "INVALID_QUANTITY" | "INVALID_PAYMENT_METHOD"; error: string };
+
+function optionalString(value: unknown, field: string, max: number): string | ValidationError | undefined {
+	if (value === undefined || value === null || value === "") return undefined;
+	if (typeof value !== "string" || value.length > max) return { ok: false, code: "INVALID_ORDER", error: `${field} must be at most ${max} characters` };
+	return value.trim() || undefined;
+}
+
+export function validateOrderPayload(body: unknown): { ok: true; data: TrustedOrderRequest } | ValidationError {
+	if (!body || typeof body !== "object") return { ok: false, code: "INVALID_ORDER", error: "Invalid request body" };
+	const input = body as Record<string, unknown>;
+	if (!input.customer || typeof input.customer !== "object") return { ok: false, code: "INVALID_ORDER", error: "Customer information is required" };
+	if (!input.payment || typeof input.payment !== "object") return { ok: false, code: "INVALID_PAYMENT_METHOD", error: "Payment method is required" };
+	if (!Array.isArray(input.items) || input.items.length === 0 || input.items.length > MAX_ITEMS) return { ok: false, code: "INVALID_ORDER", error: `Order must contain between 1 and ${MAX_ITEMS} items` };
+
+	const customerInput = input.customer as Record<string, unknown>;
+	const name = typeof customerInput.name === "string" ? customerInput.name.trim() : "";
+	const email = typeof customerInput.email === "string" ? customerInput.email.trim() : "";
+	if (name.length < 2 || name.length > LIMITS.name) return { ok: false, code: "INVALID_ORDER", error: "Enter a valid customer name" };
+	if (!EMAIL_REGEX.test(email) || email.length > LIMITS.email) return { ok: false, code: "INVALID_ORDER", error: "Enter a valid email address" };
+	const phone = optionalString(customerInput.phone, "customer.phone", LIMITS.phone);
+	if (phone && typeof phone !== "string") return phone;
+	const notes = optionalString(customerInput.notes, "customer.notes", LIMITS.notes);
+	if (notes && typeof notes !== "string") return notes;
+
+	const paymentInput = input.payment as Record<string, unknown>;
+	const method = paymentInput.method;
+	if (method !== "cash" && method !== "venmo" && method !== "zelle") return { ok: false, code: "INVALID_PAYMENT_METHOD", error: "Choose Cash, Venmo, or Zelle" };
+	const venmoUser = optionalString(paymentInput.venmoUser, "payment.venmoUser", LIMITS.venmoUser);
+	if (venmoUser && typeof venmoUser !== "string") return venmoUser;
+	if (method === "venmo" && !venmoUser) return { ok: false, code: "INVALID_PAYMENT_METHOD", error: "Venmo username is required" };
+	const note = optionalString(paymentInput.note, "payment.note", LIMITS.paymentNote);
+	if (note && typeof note !== "string") return note;
+
+	const quantities = new Map<string, number>();
+	for (let index = 0; index < input.items.length; index += 1) {
+		const item = input.items[index];
+		if (!item || typeof item !== "object") return { ok: false, code: "INVALID_ORDER", error: `Item ${index + 1} is invalid` };
+		const value = item as Record<string, unknown>;
+		const productId = typeof value.productId === "string" ? value.productId.trim() : "";
+		if (!productId || productId.length > LIMITS.productId) return { ok: false, code: "INVALID_ORDER", error: `Item ${index + 1} has an invalid product ID` };
+		if (!Number.isSafeInteger(value.quantity) || (value.quantity as number) <= 0) return { ok: false, code: "INVALID_QUANTITY", error: "Quantities must be positive whole numbers" };
+		const combined = (quantities.get(productId) ?? 0) + (value.quantity as number);
+		if (!Number.isSafeInteger(combined)) return { ok: false, code: "INVALID_QUANTITY", error: "Quantity is too large" };
+		quantities.set(productId, combined);
 	}
 
-	const obj = body as Record<string, unknown>;
-	const customer = obj.customer;
-	const items = obj.items;
-	const totals = obj.totals;
-
-	if (!customer || typeof customer !== "object") {
-		return { ok: false, error: "customer is required" };
-	}
-	if (!Array.isArray(items)) {
-		return { ok: false, error: "items must be an array" };
-	}
-	if (!totals || typeof totals !== "object") {
-		return { ok: false, error: "totals is required" };
-	}
-
-	const cust = customer as Record<string, unknown>;
-	const name = cust.name;
-	const email = cust.email;
-
-	if (typeof name !== "string" || name.trim().length < 2) {
-		return { ok: false, error: "customer.name must be at least 2 characters" };
-	}
-	if (name.length > MAX_NAME_LEN) {
-		return { ok: false, error: `customer.name must be at most ${MAX_NAME_LEN} characters` };
-	}
-
-	if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
-		return { ok: false, error: "customer.email must be a valid email" };
-	}
-	if (email.length > MAX_EMAIL_LEN) {
-		return { ok: false, error: `customer.email must be at most ${MAX_EMAIL_LEN} characters` };
-	}
-
-	const phone = cust.phone;
-	if (phone !== undefined && phone !== null) {
-		if (typeof phone !== "string") {
-			return { ok: false, error: "customer.phone must be a string" };
-		}
-		if (phone.length > MAX_PHONE_LEN) {
-			return { ok: false, error: `customer.phone must be at most ${MAX_PHONE_LEN} characters` };
-		}
-	}
-
-	const notes = cust.notes;
-	if (notes !== undefined && notes !== null) {
-		if (typeof notes !== "string") {
-			return { ok: false, error: "customer.notes must be a string" };
-		}
-		if (notes.length > MAX_NOTES_LEN) {
-			return { ok: false, error: `customer.notes must be at most ${MAX_NOTES_LEN} characters` };
-		}
-	}
-
-	const paymentMethod = cust.paymentMethod;
-	const effectivePaymentMethod = paymentMethod === "cash" ? "cash" : "venmo";
-	if (paymentMethod !== undefined && paymentMethod !== null && paymentMethod !== "venmo" && paymentMethod !== "cash") {
-		return { ok: false, error: "customer.paymentMethod must be 'venmo' or 'cash'" };
-	}
-	if (effectivePaymentMethod === "venmo") {
-		const venmoUser = cust.venmoUser;
-		if (typeof venmoUser !== "string" || venmoUser.trim().length === 0) {
-			return { ok: false, error: "customer.venmoUser is required when paymentMethod is venmo" };
-		}
-		if (venmoUser.length > MAX_VENMO_USER_LEN) {
-			return { ok: false, error: `customer.venmoUser must be at most ${MAX_VENMO_USER_LEN} characters` };
-		}
-	}
-
-	const venmoNote = cust.venmoNote;
-	if (venmoNote !== undefined && venmoNote !== null) {
-		if (typeof venmoNote !== "string") {
-			return { ok: false, error: "customer.venmoNote must be a string" };
-		}
-		if (venmoNote.length > MAX_VENMO_NOTE_LEN) {
-			return { ok: false, error: `customer.venmoNote must be at most ${MAX_VENMO_NOTE_LEN} characters` };
-		}
-	}
-
-	if (items.length === 0) {
-		return { ok: false, error: "items cannot be empty" };
-	}
-	if (items.length > MAX_ITEMS) {
-		return { ok: false, error: `items cannot exceed ${MAX_ITEMS}` };
-	}
-
-	const validatedItems: { id: string; name: string; price: number; qty: number }[] = [];
-	for (let i = 0; i < items.length; i++) {
-		const item = items[i];
-		if (!item || typeof item !== "object") {
-			return { ok: false, error: `items[${i}] must be an object` };
-		}
-		const it = item as Record<string, unknown>;
-		const id = it.id;
-		const itemName = it.name;
-		const price = it.price;
-		const qty = it.qty;
-
-		if (typeof id !== "string" || id.trim().length === 0) {
-			return { ok: false, error: `items[${i}].id is required` };
-		}
-		if (id.length > MAX_ITEM_ID_LEN) {
-			return { ok: false, error: `items[${i}].id must be at most ${MAX_ITEM_ID_LEN} characters` };
-		}
-
-		if (typeof itemName !== "string" || itemName.trim().length === 0) {
-			return { ok: false, error: `items[${i}].name is required` };
-		}
-		if (itemName.length > MAX_ITEM_NAME_LEN) {
-			return { ok: false, error: `items[${i}].name must be at most ${MAX_ITEM_NAME_LEN} characters` };
-		}
-
-		if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
-			return { ok: false, error: `items[${i}].price must be a non-negative number` };
-		}
-
-		if (typeof qty !== "number" || !Number.isInteger(qty) || qty < 1) {
-			return { ok: false, error: `items[${i}].qty must be a positive integer` };
-		}
-
-		validatedItems.push({
-			id: id.trim(),
-			name: itemName.trim(),
-			price,
-			qty,
-		});
-	}
-
-	const tot = totals as Record<string, unknown>;
-	const subtotal = tot.subtotal;
-	const tax = tot.tax;
-	const total = tot.total;
-
-	if (typeof subtotal !== "number" || !Number.isFinite(subtotal) || subtotal < 0) {
-		return { ok: false, error: "totals.subtotal must be a non-negative number" };
-	}
-	if (typeof tax !== "number" || !Number.isFinite(tax) || tax < 0) {
-		return { ok: false, error: "totals.tax must be a non-negative number" };
-	}
-	if (typeof total !== "number" || !Number.isFinite(total) || total < 0) {
-		return { ok: false, error: "totals.total must be a non-negative number" };
-	}
-
-	const customerPayload: OrderRecord["customer"] = {
-		name: name.trim(),
-		email: email.trim(),
-		...(phone !== undefined && phone !== null && { phone: String(phone).trim() }),
-		...(notes !== undefined && notes !== null && { notes: String(notes).trim() }),
-		paymentMethod: effectivePaymentMethod,
-		...(cust.venmoUser !== undefined && cust.venmoUser !== null && {
-			venmoUser: String(cust.venmoUser).trim(),
-		}),
-		...(venmoNote !== undefined && venmoNote !== null && {
-			venmoNote: String(venmoNote).trim(),
-		}),
-	};
-
-	return {
-		ok: true,
-		data: {
-			customer: customerPayload,
-			items: validatedItems,
-			totals: { subtotal, tax, total },
-		},
-	};
+	return { ok: true, data: {
+		customer: { name, email, ...(phone && { phone }), ...(notes && { notes }) },
+		payment: { method, ...(method === "venmo" && venmoUser && { venmoUser }), ...(note && { note }) },
+		items: [...quantities].map(([productId, quantity]) => ({ productId, quantity })),
+	} };
 }

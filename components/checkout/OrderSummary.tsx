@@ -36,10 +36,7 @@ export default function OrderSummary() {
 				<span className="text-sage">Subtotal</span>
 				<span className="text-cocoa">{formatCurrency(subtotal)}</span>
 			</div>
-			<div className="mt-2 flex justify-between">
-				<span className="text-sage">Tax</span>
-				<span className="text-sage">Calculated at pickup</span>
-			</div>
+			<p className="mt-2 text-xs text-sage">Final pricing is confirmed from the current catalog when you place the order.</p>
 			<div className="mt-4 flex justify-between font-bold text-cocoa">
 				<span>Total</span>
 				<span>{formatCurrency(subtotal)}</span>

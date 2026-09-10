@@ -6,53 +6,43 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import { validateOrderPayload } from "@/lib/orderValidation";
 import { createTrackingToken } from "@/lib/orderTracking";
 
+const EXPECTED_ERRORS = {
+	INVALID_PRODUCT: { status: 400, error: "One or more products are invalid." },
+	PRODUCT_UNAVAILABLE: { status: 409, error: "One or more products are no longer available." },
+	MAX_QUANTITY_EXCEEDED: { status: 400, error: "A requested quantity exceeds the per-order limit." },
+	OUT_OF_STOCK: { status: 409, error: "One or more products do not have enough stock." },
+	INVALID_QUANTITY: { status: 400, error: "Quantities must be positive whole numbers." },
+	INVALID_PAYMENT_METHOD: { status: 400, error: "Choose a valid payment method." },
+} as const;
+
+function databaseError(message?: string) {
+	const code = Object.keys(EXPECTED_ERRORS).find((candidate) => message?.startsWith(candidate)) as keyof typeof EXPECTED_ERRORS | undefined;
+	if (!code) return NextResponse.json({ code: "ORDER_FAILED", error: "We could not place your order. Please try again." }, { status: 500 });
+	return NextResponse.json({ code, error: EXPECTED_ERRORS[code].error }, { status: EXPECTED_ERRORS[code].status });
+}
+
 export async function POST(req: NextRequest) {
 	const rateLimitResponse = checkRateLimit(req);
 	if (rateLimitResponse) return rateLimitResponse;
-
 	try {
 		let body: unknown;
-		try {
-			body = await req.json();
-		} catch {
-			return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-		}
-
+		try { body = await req.json(); } catch { return NextResponse.json({ code: "INVALID_ORDER", error: "Invalid JSON body" }, { status: 400 }); }
 		const validation = validateOrderPayload(body);
-		if (!validation.ok) {
-			return NextResponse.json({ error: validation.error }, { status: 400 });
-		}
+		if (!validation.ok) return NextResponse.json({ code: validation.code, error: validation.error }, { status: 400 });
 
-		const { data: orderData } = validation;
-		const id = `ord_${Date.now().toString(36)}`;
+		const id = `ord_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
 		const trackingToken = createTrackingToken();
-		const supabase = getSupabaseAdmin();
-
-		const order: OrderRecord = {
-			id,
-			createdAt: new Date().toISOString(),
-			status: "AWAITING_PAYMENT",
-			customer: orderData.customer,
-			items: orderData.items,
-			totals: orderData.totals,
-		};
-
-		const itemsPayload = orderData.items.map((i) => ({ id: i.id, qty: i.qty }));
-		const { error } = await supabase.rpc("create_order_with_reserve", {
-			p_order_id: id,
-			p_tracking_token: trackingToken,
-			p_payload: order,
-			p_items: itemsPayload,
+		const { data, error } = await getSupabaseAdmin().rpc("create_authoritative_order", {
+			p_order_id: id, p_tracking_token: trackingToken,
+			p_customer: validation.data.customer, p_payment: validation.data.payment, p_items: validation.data.items,
 		});
-
-		if (error) {
-			return NextResponse.json({ error: error.message ?? "Order failed" }, { status: 400 });
-		}
-
+		if (error) { console.error("[orders] authoritative order failed", error); return databaseError(error.message); }
+		const order = data?.order as OrderRecord | undefined;
+		if (!order) { console.error("[orders] authoritative order returned no order", data); return databaseError(); }
 		notifyNewOrder(order).catch(console.warn);
-		return NextResponse.json({ trackingToken }, { status: 201 });
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (e: any) {
-		return NextResponse.json({ error: e.message ?? "failed" }, { status: 400 });
+		return NextResponse.json({ trackingToken, order }, { status: 201 });
+	} catch (error) {
+		console.error("[orders] unexpected failure", error);
+		return databaseError();
 	}
 }

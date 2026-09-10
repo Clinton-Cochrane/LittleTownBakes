@@ -1,118 +1,61 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { validateOrderPayload } from "./orderValidation";
 
+const validPayload = {
+	customer: { name: "Alice Baker", email: "alice@example.com" },
+	payment: { method: "cash" },
+	items: [{ productId: "cake", quantity: 1 }],
+};
+
 describe("validateOrderPayload", () => {
-	it("rejects empty body", () => {
+	it("accepts the trusted cash contract and trims customer input", () => {
+		const result = validateOrderPayload({
+			...validPayload,
+			customer: { ...validPayload.customer, name: "  Alice Baker  ", phone: " 555-0100 " },
+		});
+		expect(result).toEqual({ ok: true, data: {
+			customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100" },
+			payment: { method: "cash" },
+			items: [{ productId: "cake", quantity: 1 }],
+		} });
+	});
+
+	it("accepts Zelle with an optional note", () => {
+		expect(validateOrderPayload({ ...validPayload, payment: { method: "zelle", note: "Alice B" } }).ok).toBe(true);
+	});
+
+	it("requires a Venmo username", () => {
+		expect(validateOrderPayload({ ...validPayload, payment: { method: "venmo" } })).toMatchObject({ ok: false, code: "INVALID_PAYMENT_METHOD" });
+		expect(validateOrderPayload({ ...validPayload, payment: { method: "venmo", venmoUser: "@alice" } }).ok).toBe(true);
+	});
+
+	it("rejects an invalid payment method", () => {
+		expect(validateOrderPayload({ ...validPayload, payment: { method: "card" } })).toMatchObject({ ok: false, code: "INVALID_PAYMENT_METHOD" });
+	});
+
+	it.each([0, -1, 1.5])("rejects invalid quantity %s", (quantity) => {
+		expect(validateOrderPayload({ ...validPayload, items: [{ productId: "cake", quantity }] })).toMatchObject({ ok: false, code: "INVALID_QUANTITY" });
+	});
+
+	it("combines duplicate product IDs before database validation", () => {
+		const result = validateOrderPayload({ ...validPayload, items: [
+			{ productId: "cake", quantity: 12 }, { productId: "cake", quantity: 12 },
+		] });
+		expect(result).toMatchObject({ ok: true, data: { items: [{ productId: "cake", quantity: 24 }] } });
+	});
+
+	it("ignores untrusted catalog and total fields", () => {
+		const result = validateOrderPayload({
+			...validPayload, subtotal: 1, total: 1,
+			items: [{ productId: "cake", quantity: 1, name: "Fake", price: 0 }],
+		});
+		expect(result).toMatchObject({ ok: true, data: { items: [{ productId: "cake", quantity: 1 }] } });
+	});
+
+	it("rejects malformed customer and item input", () => {
 		expect(validateOrderPayload(null).ok).toBe(false);
-		expect(validateOrderPayload(undefined).ok).toBe(false);
-	});
-
-	it("rejects non-object body", () => {
-		expect(validateOrderPayload("string").ok).toBe(false);
-		expect(validateOrderPayload(123).ok).toBe(false);
-	});
-
-	it("rejects missing customer", () => {
-		const result = validateOrderPayload({ items: [], totals: {} });
-		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.error).toContain("customer");
-	});
-
-	it("rejects invalid name", () => {
-		const base = {
-			customer: { name: "A", email: "a@b.com" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		expect(validateOrderPayload({ ...base, customer: { ...base.customer, name: "A" } }).ok).toBe(false);
-		expect(validateOrderPayload({ ...base, customer: { ...base.customer, name: "" } }).ok).toBe(false);
-	});
-
-	it("rejects invalid email", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		expect(validateOrderPayload({ ...base, customer: { ...base.customer, email: "invalid" } }).ok).toBe(false);
-		expect(validateOrderPayload({ ...base, customer: { ...base.customer, email: "" } }).ok).toBe(false);
-	});
-
-	it("rejects venmo without venmoUser", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com", paymentMethod: "venmo" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		const result = validateOrderPayload(base);
-		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.error).toContain("venmoUser");
-	});
-
-	it("accepts venmo with venmoUser", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com", paymentMethod: "venmo", venmoUser: "@alice" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		const result = validateOrderPayload(base);
-		expect(result.ok).toBe(true);
-		if (result.ok) expect(result.data.customer.venmoUser).toBe("@alice");
-	});
-
-	it("accepts cash without venmoUser", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com", paymentMethod: "cash" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		const result = validateOrderPayload(base);
-		expect(result.ok).toBe(true);
-	});
-
-	it("rejects empty items", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com", paymentMethod: "cash" },
-			items: [],
-			totals: { subtotal: 0, tax: 0, total: 0 },
-		};
-		const result = validateOrderPayload(base);
-		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.error).toContain("empty");
-	});
-
-	it("rejects invalid item (negative price)", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com" },
-			items: [{ id: "x", name: "Item", price: -1, qty: 1 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		expect(validateOrderPayload(base).ok).toBe(false);
-	});
-
-	it("rejects invalid item (qty < 1)", () => {
-		const base = {
-			customer: { name: "Alice", email: "a@b.com" },
-			items: [{ id: "x", name: "Item", price: 1, qty: 0 }],
-			totals: { subtotal: 1, tax: 0, total: 1 },
-		};
-		expect(validateOrderPayload(base).ok).toBe(false);
-	});
-
-	it("accepts valid minimal order (cash)", () => {
-		const payload = {
-			customer: { name: "Alice", email: "a@b.com", paymentMethod: "cash" },
-			items: [{ id: "cake", name: "Chocolate Cake", price: 25, qty: 1 }],
-			totals: { subtotal: 25, tax: 0, total: 25 },
-		};
-		const result = validateOrderPayload(payload);
-		expect(result.ok).toBe(true);
-		if (result.ok) {
-			expect(result.data.customer.name).toBe("Alice");
-			expect(result.data.customer.email).toBe("a@b.com");
-			expect(result.data.customer.paymentMethod).toBe("cash");
-			expect(result.data.items).toHaveLength(1);
-			expect(result.data.items[0]).toEqual({ id: "cake", name: "Chocolate Cake", price: 25, qty: 1 });
-		}
+		expect(validateOrderPayload({ ...validPayload, customer: { name: "A", email: "bad" } }).ok).toBe(false);
+		expect(validateOrderPayload({ ...validPayload, items: [] }).ok).toBe(false);
+		expect(validateOrderPayload({ ...validPayload, items: [{ productId: "", quantity: 1 }] }).ok).toBe(false);
 	});
 });

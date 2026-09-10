@@ -25,7 +25,8 @@ docker exec "$container" pg_isready -U postgres -d "$database" >/dev/null
 docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" <<'SQL'
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
-CREATE ROLE service_role NOLOGIN;
+CREATE ROLE service_role NOLOGIN BYPASSRLS;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 SQL
 
 for migration in supabase/migrations/*.sql; do
@@ -34,8 +35,8 @@ done
 docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \
     < supabase/tests/current_product_inventory.sql >/dev/null
 
-reservation_one="SELECT public.create_order_with_reserve('race_1','track_race_1','{\"items\":[{\"id\":\"cookie_chocolatechip\",\"qty\":1}]}'::jsonb,'[{\"id\":\"cookie_chocolatechip\",\"qty\":1}]'::jsonb);"
-reservation_two="SELECT public.create_order_with_reserve('race_2','track_race_2','{\"items\":[{\"id\":\"cookie_chocolatechip\",\"qty\":1}]}'::jsonb,'[{\"id\":\"cookie_chocolatechip\",\"qty\":1}]'::jsonb);"
+reservation_one="SELECT public.create_authoritative_order('race_1','track_race_1','{\"name\":\"Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
+reservation_two="SELECT public.create_authoritative_order('race_2','track_race_2','{\"name\":\"Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb);"
 
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$reservation_one" >"$results_dir/one" 2>&1 &
 pid_one=$!

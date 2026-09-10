@@ -1,17 +1,18 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/components/cart/useCart";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm, { CheckoutData } from "@/components/checkout/paymentTiles/CheckoutForm";
 import VenmoTile from "@/components/checkout/paymentTiles/VenmoTile";
+import type { PaymentMethod } from "@/lib/orderTypes";
 
 export default function CheckoutPage() {
 	const router = useRouter();
 	const { items, clearCart, hydrated } = useCart();
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [paymentMethod, setPaymentMethod] = useState<"venmo" | "cash">("venmo");
+	const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("venmo");
 	const orderPlacedRef = useRef(false);
 
 	useEffect(() => {
@@ -21,16 +22,14 @@ export default function CheckoutPage() {
 		}
 	}, [hydrated, items.length, router]);
 
-	const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
-
 	async function submit(data: CheckoutData) {
 		if (!items.length) return;
 		setSubmitting(true);
 		setError(null);
 		const payload = {
-			customer: data,
-			items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
-			totals: { subtotal, tax: 0, total: subtotal },
+			customer: { name: data.name, email: data.email, phone: data.phone, notes: data.notes },
+			payment: { method: data.paymentMethod, venmoUser: data.venmoUser, note: data.paymentNote },
+			items: items.map((item) => ({ productId: item.id, quantity: item.qty })),
 		};
 		const res = await fetch("/api/orders", {
 			method: "POST",
@@ -84,7 +83,9 @@ export default function CheckoutPage() {
 					<p className="mt-4 text-sm text-sage">
 						{paymentMethod === "venmo"
 							? "After you pay via Venmo, we'll confirm and update your order status."
-							: "Pay with cash when you pick up your order."}
+							: paymentMethod === "zelle"
+								? "Send payment via Zelle. The baker will verify it manually."
+								: "Pay with cash at pickup. Your order can be prepared while payment is pending."}
 					</p>
 					<button
 						type="submit"

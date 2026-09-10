@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { handleAdminAuthFailure } from "@/lib/adminResponse";
-import type { AdminOrderRecord, OrderStatus } from "@/lib/orderTypes";
+import type { AdminOrderRecord, FulfillmentStatus, PaymentStatus } from "@/lib/orderTypes";
+import { formatCurrency } from "@/lib/menuCatalog";
 import {
 	getAllowedNextStatuses,
 	orderStatusActionLabel,
@@ -11,7 +12,7 @@ import {
 	PIPELINE_STATUSES,
 } from "@/lib/orderStatusFlow";
 
-function pipelineIndex(status: OrderStatus): number {
+function pipelineIndex(status: FulfillmentStatus): number {
 	if (status === "CANCELED") return -1;
 	return PIPELINE_STATUSES.indexOf(status);
 }
@@ -38,12 +39,12 @@ export default function AdminOrders() {
 		fetchList();
 	}, []);
 
-	async function setStatus(id: string, status: OrderStatus) {
+	async function updateOrder(id: string, change: { fulfillmentStatus: FulfillmentStatus } | { paymentStatus: PaymentStatus }) {
 		setError(null);
 		const res = await fetch(`/api/orders/${id}/status`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ status }),
+			body: JSON.stringify(change),
 		});
 		if (!res.ok) {
 			const authError = handleAdminAuthFailure(res);
@@ -62,8 +63,7 @@ export default function AdminOrders() {
 		<main className="mx-auto max-w-4xl px-4 py-6">
 			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Orders</h1>
 			<p className="mb-6 text-sm text-sage">
-				Move each order forward one step at a time: payment → kitchen → ready → picked up. Cancel anytime before
-				completion.
+				Track payment independently while moving fulfillment from received through pickup.
 			</p>
 
 			{error && (
@@ -77,7 +77,7 @@ export default function AdminOrders() {
 			) : (
 				<div className="flex flex-col gap-6">
 					{orders.map((o) => (
-						<OrderCard key={o.id} order={o} onSetStatus={setStatus} />
+						<OrderCard key={o.id} order={o} onUpdate={updateOrder} />
 					))}
 				</div>
 			)}
@@ -87,14 +87,14 @@ export default function AdminOrders() {
 
 function OrderCard({
 	order: o,
-	onSetStatus,
+	onUpdate,
 }: {
 	order: AdminOrderRecord;
-	onSetStatus: (id: string, status: OrderStatus) => void;
+	onUpdate: (id: string, change: { fulfillmentStatus: FulfillmentStatus } | { paymentStatus: PaymentStatus }) => void;
 }) {
-	const idx = pipelineIndex(o.status);
-	const nextOptions = getAllowedNextStatuses(o.status);
-	const isCanceled = o.status === "CANCELED";
+	const idx = pipelineIndex(o.fulfillmentStatus);
+	const nextOptions = getAllowedNextStatuses(o.fulfillmentStatus);
+	const isCanceled = o.fulfillmentStatus === "CANCELED";
 
 	return (
 		<div className="card-warm overflow-hidden p-4 sm:p-6">
@@ -110,12 +110,27 @@ function OrderCard({
 					</Link>
 				)}
 			</div>
+			<div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-cocoa">
+				<span>Payment: <strong>{o.payment.status}</strong> via {o.payment.method}</span>
+				{o.payment.status === "PENDING" && !isCanceled && (
+					<button type="button" className="btn-primary" onClick={() => onUpdate(o.id, { paymentStatus: "PAID" })}>Mark paid</button>
+				)}
+			</div>
+			<ul className="mt-4 space-y-1 text-sm text-cocoa">
+				{o.items.map((item) => (
+					<li key={item.productId} className="flex justify-between gap-4">
+						<span>{item.quantity} × {item.name}</span>
+						<span>{formatCurrency(item.lineTotalCents / 100)}</span>
+					</li>
+				))}
+			</ul>
+			<p className="mt-2 text-right font-semibold text-cocoa">Total: {formatCurrency(o.totals.totalCents / 100)}</p>
 
 			{isCanceled ? (
 				<p className="mt-4 rounded-lg border border-crust bg-cream/80 px-3 py-2 text-sm text-caramel">
 					<strong>Canceled</strong> — no further changes.
 				</p>
-			) : o.status === "COMPLETED" ? (
+			) : o.fulfillmentStatus === "COMPLETED" ? (
 				<p className="mt-4 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-cocoa">
 					<strong>Completed</strong> — this order is finished.
 				</p>
@@ -166,7 +181,7 @@ function OrderCard({
 							<button
 								key={s}
 								type="button"
-								onClick={() => onSetStatus(o.id, s)}
+								onClick={() => onUpdate(o.id, { fulfillmentStatus: s })}
 								className={
 									s === "CANCELED"
 										? "btn-danger"
