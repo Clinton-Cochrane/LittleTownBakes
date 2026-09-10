@@ -183,3 +183,32 @@ SELECT pg_temp.assert_true(
 
 UPDATE public.product_inventory SET quantity_on_hand = 1 WHERE product_id = 'cookie_chocolatechip';
 DELETE FROM public.orders WHERE id LIKE 'race_%';
+
+UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cakepop_chocolate';
+SELECT pg_temp.assert_true(
+    public.adjust_product_inventory('cakepop_chocolate', 1) = 6
+    AND public.adjust_product_inventory('cakepop_chocolate', -1) = 5,
+    'admin adjustments add and subtract exact deltas'
+);
+SELECT pg_temp.assert_true(
+    public.adjust_product_inventory('cakepop_chocolate', 12) = 17,
+    'refill adds to current stock instead of replacing it'
+);
+DO $$ BEGIN
+    BEGIN
+        PERFORM public.adjust_product_inventory('cakepop_chocolate', -18);
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'INVENTORY_OUT_OF_RANGE%' THEN RAISE; END IF;
+    END;
+END $$;
+SELECT pg_temp.assert_true(
+    (SELECT quantity_on_hand = 17 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
+    'failed decrement cannot make inventory negative'
+);
+SELECT pg_temp.assert_true(
+    NOT has_function_privilege('anon', 'public.adjust_product_inventory(text,integer)', 'EXECUTE')
+    AND NOT has_function_privilege('authenticated', 'public.adjust_product_inventory(text,integer)', 'EXECUTE')
+    AND has_function_privilege('service_role', 'public.adjust_product_inventory(text,integer)', 'EXECUTE'),
+    'atomic admin adjustment is available only to the server role'
+);
