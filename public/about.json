@@ -1,23 +1,27 @@
 {
   "about": {
-    "story": "",
-    "howWeBake": "",
-    "whoWeAre": "",
-    "values": ""
+    "story": "Little Town Bakes began in a home kitchen in Oakley, California, with a well-loved mixing bowl, a notebook full of family recipes, and the simple idea that something freshly baked can make an ordinary day feel special. What started as treats shared with neighbors grew into a small-town bakery built around familiar flavors, generous portions, and the joy of making people feel at home.",
+    "howWeBake": "Everything is baked in small batches so each cookie, bar, and seasonal special gets the care it deserves. We lean on real butter, good chocolate, bright citrus, warm spices, and thoughtfully chosen ingredients—then bake for the texture and flavor that make you reach for one more bite.",
+    "whoWeAre": "We are a local cottage bakery serving Oakley and the surrounding East Contra Costa community. Our kitchen is happiest when the oven is warm, the music is on, and a box of fresh bakes is headed to a birthday, a neighbor's porch, or a quiet treat at the end of a long week.",
+    "values": "At Little Town Bakes, hospitality comes first. That means dependable pickup, friendly communication, honest ingredients, and treats we are genuinely proud to put our name on. We keep things personal, bake with intention, and believe the best kind of growth still feels neighborly."
   },
   "howToOrder": {
-    "intro": "",
-    "steps": [],
-    "pickupLocation": "",
-    "pickupHours": "",
-    "leadTime": "",
-    "payment": ""
+    "intro": "Our menu changes with the season and with whatever has us excited to turn on the oven. Ordering is simple:",
+    "steps": [
+      "Browse the current menu, choose your favorites, and add them to your cart.",
+      "At checkout, share your details, select an available pickup window, and choose a payment method.",
+      "Watch for your order confirmation, then meet us at your selected time for a box of fresh bakes."
+    ],
+    "pickupLocation": "Oakley, California. The exact residential pickup address is shared with confirmed orders.",
+    "pickupHours": "Available pickup dates and times are shown at checkout. All times are Pacific Time.",
+    "leadTime": "Quantities are limited because every batch is made fresh. Order early for the best selection, and contact us in advance for larger or special-event orders.",
+    "payment": "Choose Venmo, Zelle, or cash at checkout. Digital payments are verified before an order is marked paid."
   },
   "contact": {
-    "email": "",
-    "phone": "",
-    "instagram": "",
-    "facebook": "",
-    "tiktok": ""
+    "email": "hello@littletownbakes.com",
+    "phone": "(925) 555-0148",
+    "instagram": "@LittleTownBakes",
+    "facebook": "LittleTownBakes",
+    "tiktok": "@LittleTownBakes"
   }
 }
