@@ -18,6 +18,21 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key used by cookie-backed Auth clients |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
 | `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
+| `NOTIFICATIONS_ENABLED` | No | Set to `true` to enable configured server-side notification channels (default: disabled) |
+| `RESEND_API_KEY` | For email | Resend API key (server-only) |
+| `NOTIFICATION_EMAIL_FROM` | For email | Sender on a Resend-verified domain, e.g. `Little Town Bakes <orders@updates.example.com>` |
+| `BAKER_NOTIFICATION_EMAIL` | For email | Baker inbox that receives operational order notifications (server-only) |
+| `ADMIN_ORDERS_URL` | No | Absolute admin orders URL included in notifications |
+
+## Notifications
+
+Order routes persist changes before awaiting notification delivery. `NotificationService` fans each event out to the configured channels with independent settled results, so one provider failure cannot stop another channel or change a successful order response. Environment-based delivery is always disabled when `NODE_ENV=test`; tests use injected providers instead.
+
+Email is delivered through Resend's HTTPS API. To enable it in production, verify the sender domain in Resend and set all four email-related variables shown above. A partial email configuration is logged and skipped. Leaving notification configuration unset disables delivery cleanly.
+
+Push and SMS have injectable channel/provider interfaces but no production providers yet. Adding either provider does not require changes to the order routes or notification orchestrator.
+
+Every event has a stable key such as `new-order:<order-id>` or `status-change:<order-id>:<fulfillment-status>:<payment-status>`. The email channel appends `:email` and sends it as Resend's idempotency key. Resend deduplicates identical requests for that key during its provider retention window; there is no application-side retry worker or permanent notification ledger.
 
 ## Database
 

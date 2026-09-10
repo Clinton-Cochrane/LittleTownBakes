@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), update: vi.fn(), eqSelect: vi.fn(), eqUpdate: vi.fn(), eqStatus: vi.fn(), maybeSingle: vi.fn(), auth: vi.fn() }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), update: vi.fn(), eqSelect: vi.fn(), eqUpdate: vi.fn(), eqStatus: vi.fn(), maybeSingle: vi.fn(), auth: vi.fn(), notify: vi.fn() }));
 vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth }));
 vi.mock("@/lib/supabaseAdmin", () => ({ getSupabaseAdmin: () => ({ from: mocks.from, rpc: mocks.rpc }) }));
-vi.mock("@/lib/notify", () => ({ notifyStatusChange: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/notify", () => ({ notifyStatusChange: mocks.notify }));
 import { POST } from "./route";
 
 function request(body: unknown) { return new NextRequest("http://localhost/api/orders/ord/status", { method: "POST", body: JSON.stringify(body) }); }
 describe("POST order status", () => {
 	beforeEach(() => {
-		vi.clearAllMocks(); mocks.auth.mockResolvedValue({ authorized: true });
+		vi.clearAllMocks(); mocks.auth.mockResolvedValue({ authorized: true }); mocks.notify.mockResolvedValue(undefined);
 		mocks.eqSelect.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { status: "RECEIVED", payload: {
 			id: "ord", createdAt: "2026-09-09", fulfillmentStatus: "RECEIVED", payment: { method: "cash", status: "PENDING" }, customer: { name: "A", email: "a@b.com" }, items: [], totals: { subtotalCents: 0, totalCents: 0 },
 		} }, error: null }) });
@@ -23,6 +23,13 @@ describe("POST order status", () => {
 		const response = await POST(request({ fulfillmentStatus: "IN_PROGRESS" }), { params: Promise.resolve({ id: "ord" }) });
 		expect(response.status).toBe(200);
 		expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ status: "IN_PROGRESS", payload: expect.objectContaining({ payment: { method: "cash", status: "PENDING" } }) }));
+		expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ id: "ord", fulfillmentStatus: "IN_PROGRESS" }));
+	});
+	it("keeps a persisted status change successful when notification unexpectedly rejects", async () => {
+		mocks.notify.mockRejectedValue(new Error("provider failure"));
+		const response = await POST(request({ fulfillmentStatus: "IN_PROGRESS" }), { params: Promise.resolve({ id: "ord" }) });
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ ok: true });
 	});
 	it("marks payment paid without changing fulfillment or inventory", async () => {
 		const response = await POST(request({ paymentStatus: "PAID" }), { params: Promise.resolve({ id: "ord" }) });
