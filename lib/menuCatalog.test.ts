@@ -43,11 +43,28 @@ describe("buildSections", () => {
 				{ id: "z", name: "Z", sortOrder: 3 },
 				{ id: "a", name: "A", sortOrder: 1 },
 			],
-			items: [],
+			items: [
+				{ id: "1", name: "Z item", categoryId: "z", basePrice: 1, availability: { inStock: true } },
+				{ id: "2", name: "A item", categoryId: "a", basePrice: 1, availability: { inStock: true } },
+			],
 		};
 		const sections = buildSections(catalog);
 		expect(sections[0].category.id).toBe("a");
 		expect(sections[1].category.id).toBe("z");
+	});
+
+	it("omits categories with no current products", () => {
+		const catalog: MenuCatalog = {
+			categories: [
+				{ id: "empty", name: "Empty", sortOrder: 1 },
+				{ id: "current", name: "Current", sortOrder: 2 },
+			],
+			items: [
+				{ id: "1", name: "Cake", categoryId: "current", basePrice: 1, availability: { inStock: false } },
+			],
+		};
+
+		expect(buildSections(catalog).map((section) => section.category.id)).toEqual(["current"]);
 	});
 
 	it("sorts products by sortOrder, then name", () => {
