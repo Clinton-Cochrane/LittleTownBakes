@@ -2,18 +2,36 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArchivedFlavorCard, type ArchivedItem } from "@/components/menu/ArchivedFlavorCard";
-
+import type { ArchivedItem } from "@/components/menu/ArchivedFlavorCard";
+import { loadArchivedFlavors, PastFlavorsContent } from "./PastFlavorsContent";
 
 export default function RequestFlavorPage() {
 	const [archivedItems, setArchivedItems] = useState<ArchivedItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		fetch("/api/menu")
-			.then((response) => response.json())
-			.then((data) => setArchivedItems(data.archivedItems ?? []))
-			.finally(() => setLoading(false));
+		let alive = true;
+
+		(async () => {
+			try {
+				const items = await loadArchivedFlavors();
+				if (alive) setArchivedItems(items);
+			} catch (loadError) {
+				if (!alive) return;
+				setError(
+					loadError instanceof Error
+						? loadError.message
+						: "Menu is currently unavailable. Please try again later."
+				);
+			} finally {
+				if (alive) setLoading(false);
+			}
+		})();
+
+		return () => {
+			alive = false;
+		};
 	}, []);
 
 	return (
@@ -22,13 +40,7 @@ export default function RequestFlavorPage() {
 			<h1 className="mb-2 font-display text-3xl font-semibold text-cocoa">Past Flavors</h1>
 			<p className="mb-8 text-sage">Flavors we&apos;ve retired. Miss one? Send the baker a quick anonymous signal.</p>
 
-			{loading ? <p className="text-sage">Loading...</p> : archivedItems.length === 0 ? (
-				<p className="text-sage">No past flavors at the moment. Check back later!</p>
-			) : (
-				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-					{archivedItems.map((item) => <ArchivedFlavorCard key={item.id} item={item} />)}
-				</div>
-			)}
+			<PastFlavorsContent archivedItems={archivedItems} loading={loading} error={error} />
 		</main>
 	);
 }
