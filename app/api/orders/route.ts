@@ -39,7 +39,11 @@ export async function POST(req: NextRequest) {
 		if (error) { console.error("[orders] authoritative order failed", error); return databaseError(error.message); }
 		const order = data?.order as OrderRecord | undefined;
 		if (!order) { console.error("[orders] authoritative order returned no order", data); return databaseError(); }
-		notifyNewOrder(order).catch(console.warn);
+		try {
+			await notifyNewOrder(order);
+		} catch {
+			console.error("[orders] notification orchestration failed", { orderId: order.id });
+		}
 		return NextResponse.json({ trackingToken, order }, { status: 201 });
 	} catch (error) {
 		console.error("[orders] unexpected failure", error);

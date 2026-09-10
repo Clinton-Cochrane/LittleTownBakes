@@ -53,7 +53,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 	if (fulfillmentStatus === "CANCELED") {
 		const { data: cancellation, error: cancelError } = await supabase.rpc("cancel_order_and_restore_inventory", { p_order_id: id });
 		if (cancelError) { console.error("[orders] cancellation failed", cancelError); return NextResponse.json({ error: "Could not cancel order" }, { status: 400 }); }
-		if (cancellation?.restored !== false) notifyStatusChange(updated).catch(console.warn);
+		if (cancellation?.restored !== false) {
+			try {
+				await notifyStatusChange(updated);
+			} catch {
+				console.error("[orders] status notification orchestration failed", { orderId: updated.id });
+			}
+		}
 		return NextResponse.json({ ok: true });
 	}
 
@@ -61,6 +67,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 		.eq("id", id).eq("status", previous.fulfillmentStatus).select("id").maybeSingle();
 	if (updateError) return NextResponse.json({ error: "Could not update fulfillment status" }, { status: 400 });
 	if (!changed) return NextResponse.json({ error: "Order changed; refresh and try again" }, { status: 409 });
-	notifyStatusChange(updated).catch(console.warn);
+	try {
+		await notifyStatusChange(updated);
+	} catch {
+		console.error("[orders] status notification orchestration failed", { orderId: updated.id });
+	}
 	return NextResponse.json({ ok: true });
 }

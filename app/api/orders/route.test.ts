@@ -47,6 +47,39 @@ describe("POST /api/orders", () => {
 		expect(mockNotify).toHaveBeenCalledWith(authoritativeOrder);
 	});
 
+	it("starts notification only after persistence and awaits it before responding", async () => {
+		let finishNotification: (() => void) | undefined;
+		mockNotify.mockImplementation(() => new Promise<void>((resolve) => { finishNotification = resolve; }));
+
+		const responsePromise = POST(request(trustedRequest));
+		await vi.waitFor(() => expect(mockNotify).toHaveBeenCalledWith(authoritativeOrder));
+		expect(mockRpc.mock.invocationCallOrder[0]).toBeLessThan(mockNotify.mock.invocationCallOrder[0]);
+		let responded = false;
+		void responsePromise.then(() => { responded = true; });
+		await Promise.resolve();
+		expect(responded).toBe(false);
+
+		finishNotification?.();
+		expect((await responsePromise).status).toBe(201);
+	});
+
+	it("returns the persisted order when notification orchestration unexpectedly rejects", async () => {
+		mockNotify.mockRejectedValue(new Error("provider configuration failed"));
+
+		const response = await POST(request(trustedRequest));
+
+		expect(response.status).toBe(201);
+		expect(await response.json()).toMatchObject({ order: authoritativeOrder });
+	});
+
+	it("does not notify when persistence fails", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: { message: "OUT_OF_STOCK" } });
+
+		await POST(request(trustedRequest));
+
+		expect(mockNotify).not.toHaveBeenCalled();
+	});
+
 	it.each([["INVALID_PRODUCT", 400], ["PRODUCT_UNAVAILABLE", 409], ["MAX_QUANTITY_EXCEEDED", 400], ["OUT_OF_STOCK", 409]])(
 		"maps %s without exposing database details", async (code, status) => {
 			mockRpc.mockResolvedValue({ data: null, error: { message: `${code}: secret table detail` } });
