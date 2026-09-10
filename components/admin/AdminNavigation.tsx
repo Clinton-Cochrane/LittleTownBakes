@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 import {
-	ChatNavIcon,
 	MenuNavIcon,
 	OrdersNavIcon,
 	PastFlavorsNavIcon,
@@ -10,7 +9,6 @@ import {
 const links = [
 	{ href: "/admin/orders", label: "Orders", Icon: OrdersNavIcon },
 	{ href: "/admin/menu", label: "Menu", Icon: MenuNavIcon },
-	{ href: "/admin/flavor-requests", label: "Demand", Icon: ChatNavIcon },
 	{ href: "/admin/menu?view=past", label: "Past Flavors", Icon: PastFlavorsNavIcon },
 ];
 

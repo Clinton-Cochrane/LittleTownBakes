@@ -45,8 +45,6 @@ SELECT public.create_authoritative_order(
     '{"method":"cash"}'::jsonb,
     '[{"productId":"00000000-0000-4000-8000-000000000011","quantity":1}]'::jsonb
 );
-INSERT INTO public.flavor_requests (item_id, customer_email)
-VALUES ('00000000-0000-4000-8000-000000000011', 'catalog@example.com');
 UPDATE public.products SET is_archived = true WHERE id = '00000000-0000-4000-8000-000000000011';
 UPDATE public.products SET is_archived = false WHERE id = '00000000-0000-4000-8000-000000000011';
 UPDATE public.products SET is_archived = false WHERE id = '00000000-0000-4000-8000-000000000011';
@@ -60,11 +58,10 @@ SELECT pg_temp.assert_catalog(
     AND (SELECT payload->'items'->0->>'productId' = '00000000-0000-4000-8000-000000000011'
         FROM public.orders WHERE id = 'admin_catalog_history')
     AND EXISTS (
-        SELECT 1 FROM public.flavor_requests
-        WHERE item_id = '00000000-0000-4000-8000-000000000011'
-          AND customer_email = 'catalog@example.com'
+        SELECT 1 FROM public.product_demand_events
+        WHERE product_id = '00000000-0000-4000-8000-000000000011'
     ),
-    'move and idempotent archive transitions preserve identity, inventory, orders, and flavor requests'
+    'move and idempotent archive transitions preserve identity, inventory, orders, and demand history'
 );
 
 SELECT public.reorder_category_products(

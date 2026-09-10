@@ -21,7 +21,7 @@ export default function AdminSettingsPage() {
 				</h2>
 				<ul className="list-inside list-disc space-y-2 text-sage">
 					<li>Payment and checkout copy (Venmo handle, instructions, pickup notes)</li>
-					<li>Email addresses and who receives order or flavor-request notifications</li>
+					<li>Email addresses and who receives order notifications</li>
 					<li>Any future integrations (e.g. transactional email, SMS)</li>
 				</ul>
 			</section>

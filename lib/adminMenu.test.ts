@@ -18,6 +18,9 @@ function product(overrides: Partial<AdminMenuProduct>): AdminMenuProduct {
 		isArchived: false,
 		sortOrder: 10,
 		quantityOnHand: 4,
+		soldCount: 0,
+		demandCount: 0,
+		currentDemandCount: 0,
 		...overrides,
 	};
 }

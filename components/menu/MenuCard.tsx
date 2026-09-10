@@ -1,4 +1,5 @@
 import type { Item } from "@/lib/menuCatalog";
+import { DemandSignalButton } from "./DemandSignalButton";
 
 type Props = {
 	item: Item;
@@ -44,15 +45,19 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 				) : null}
 
 				<div className="mt-auto flex flex-wrap items-center gap-4 gap-y-3 pt-4">
-					{qty <= 0 ? (
+					{!available ? (
+						<div>
+							<span className="mb-2 block text-sm font-semibold text-berry">Sold Out</span>
+							<DemandSignalButton productId={item.id} label="Bummed I missed this" />
+						</div>
+					) : qty <= 0 ? (
 						<button
 							type="button"
 							onClick={onAdd}
-							disabled={!available}
-							aria-label={available ? `Add ${item.name} to cart` : `${item.name} is sold out`}
-							className="btn-primary disabled:bg-sage disabled:border-sage"
+							aria-label={`Add ${item.name} to cart`}
+							className="btn-primary"
 						>
-							{available ? "Add To Cart" : "Sold Out"}
+							Add To Cart
 						</button>
 					) : (
 						<div aria-label={`quantity for ${item.name}`} className="flex items-center gap-2">

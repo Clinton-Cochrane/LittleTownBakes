@@ -16,6 +16,9 @@ function product(quantityOnHand: number): AdminMenuProduct {
 		isArchived: false,
 		sortOrder: 10,
 		quantityOnHand,
+		soldCount: 82,
+		demandCount: 31,
+		currentDemandCount: 4,
 	};
 }
 
@@ -39,6 +42,7 @@ describe("MenuProductCard", () => {
 		expect(html).toContain("Chocolate Cake");
 		expect(html).toContain("Sold Out · 0 available");
 		expect(html).toContain("Refill");
+		expect(html).toContain("82 sold · 31 demand signals");
 		expect(html).toContain("disabled");
 	});
 
@@ -48,6 +52,7 @@ describe("MenuProductCard", () => {
 		}));
 
 		expect(html).toContain("Restore");
+		expect(html).toContain("82 sold · 31 demand signals");
 		expect(html).not.toContain("Add one Chocolate Cake");
 		expect(html).not.toContain("Refill");
 	});
