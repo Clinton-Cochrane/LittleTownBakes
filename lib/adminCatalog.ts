@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { listLocalCategories, listLocalProducts } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
@@ -228,6 +230,7 @@ async function nextSortOrder(table: "categories" | "products", categoryId?: stri
 }
 
 export async function listCategories() {
+	if (isLocalMode()) return listLocalCategories();
 	const { data, error } = await getSupabaseAdmin()
 		.from("categories")
 		.select(categoryFields)
@@ -262,6 +265,7 @@ export async function updateCategory(id: string, input: CategoryInput) {
 }
 
 export async function listProducts() {
+	if (isLocalMode()) return listLocalProducts();
 	const { data, error } = await getSupabaseAdmin().rpc("list_admin_products_with_stats");
 	if (error) databaseFailure("list products", error);
 	return ((data ?? []) as ProductStatsRow[]).map(mapProductWithStats);

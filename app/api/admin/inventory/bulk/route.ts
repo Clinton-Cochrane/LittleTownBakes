@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminAuth";
+import { requireWritableAdmin } from "@/lib/adminAuth";
 import {
 	parseInventoryBulkJson,
 	parseInventoryCsv,
@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  * with the same fields as CSV rows.
  */
 export async function POST(req: NextRequest) {
-	const authorization = await requireAdmin();
+	const authorization = await requireWritableAdmin();
 	if (!authorization.authorized) return authorization.response;
 
 	const type = (req.headers.get("content-type") ?? "").toLowerCase();

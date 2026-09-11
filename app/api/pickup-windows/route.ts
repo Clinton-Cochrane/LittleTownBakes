@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { CustomerPickupWindow } from "@/lib/pickupWindows";
+import { getLocalPickupWindows } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 type PickupWindowRow = { id: string; start_at: string; end_at: string };
 
 export async function GET() {
+	if (isLocalMode()) {
+		const windows = (await getLocalPickupWindows()).map((window) => ({
+			id: window.id,
+			startAt: window.start_at,
+			endAt: window.end_at,
+		}));
+		return NextResponse.json(windows, { headers: { "Cache-Control": "no-store" } });
+	}
 	const { data, error } = await getSupabaseAdmin().rpc("list_available_pickup_windows");
 	if (error) {
 		console.error("[pickup-windows] availability lookup failed", error);

@@ -6,9 +6,29 @@ Little Town Bakes – cottage bakery ordering app with menu, cart, checkout, and
 
 See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, migrations, etc.).
 
-1. Copy `.env.example` to `.env.local` and fill in values.
+For normal local UI and workflow development, no Supabase setup is required:
+
+```bash
+npm install
+npm run dev:local
+```
+
+Open `http://localhost:3000`. Local data is generated at `.local/data.json`, which is ignored by Git. The generated catalog includes available, sold-out, and archived products plus future pickup windows. Checkout writes orders to this file so order tracking and the admin order list reflect them immediately.
+
+Local admin credentials are displayed on `/admin/login`:
+
+```text
+Email: root@local.test
+Password: toor
+```
+
+Admin screens are viewable in local mode, but admin mutations are intentionally read-only. Reset the generated data at any time with `npm run local:reset`.
+
+For production-like Supabase development instead:
+
+1. Copy `.env.example` to `.env.local` and fill in the Supabase values.
 2. Run Supabase migrations in `supabase/migrations/` via Supabase SQL Editor or CLI.
-3. `npm install && npm run dev`
+3. Run `npm run dev`.
 
 ## Environment Variables
 
@@ -17,6 +37,7 @@ See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, mi
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key used by cookie-backed Auth clients |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `LOCAL_DATA_SOURCE` | Local only | `npm run dev:local` sets this to `json`; it is ignored in production |
 | `MENU_DATA_SOURCE` | No | Set to `fixture` only for deterministic local development/test menu data; production always uses Supabase |
 | `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
 | `NOTIFICATIONS_ENABLED` | No | Set to `true` to enable configured server-side notification channels (default: disabled) |
@@ -79,6 +100,8 @@ Admin accounts must be managed through the Supabase Dashboard or trusted server-
 
 The administrative client used for provisioning must remain in server-only tooling. The application keeps caller authentication separate from `lib/supabaseAdmin.ts`, which continues to perform privileged database operations only after the caller passes the server authorization check.
 
+The production provisioning workflow above is not needed for `npm run dev:local`. Local authentication uses a separate server-only development cookie and the displayed fake credentials. The local identity and JSON adapter cannot be enabled when `NODE_ENV=production`.
+
 ## Deployment
 
 - **Vercel:** Connect the repo, set env vars for **Production** (and Preview if needed), deploy.
@@ -88,6 +111,8 @@ The administrative client used for provisioning must remain in server-only tooli
 ## Scripts
 
 - `npm run dev` – development with Turbopack
+- `npm run dev:local` – self-contained JSON-backed development with no Supabase dependency
+- `npm run local:reset` – replace `.local/data.json` with fresh representative data
 - `npm run build` – production build
 - `npm run start` – production server
 - `npm run test` – Vitest unit tests

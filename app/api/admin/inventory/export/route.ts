@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { stringifyInventoryCsv } from "@/lib/inventoryBulk";
 import type { ProductInventory } from "@/lib/inventory";
+import { getLocalInventory } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +18,17 @@ export async function GET(req: NextRequest) {
 
 	const format = (req.nextUrl.searchParams.get("format") ?? "csv").toLowerCase();
 
-	const { data, error } = await supabaseAdmin
-		.from("product_inventory")
-		.select("*")
-		.order("product_id", { ascending: true });
-
-	if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-	const inventory = (data ?? []) as ProductInventory[];
+	let inventory: ProductInventory[];
+	if (isLocalMode()) {
+		inventory = await getLocalInventory();
+	} else {
+		const { data, error } = await supabaseAdmin
+			.from("product_inventory")
+			.select("*")
+			.order("product_id", { ascending: true });
+		if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+		inventory = (data ?? []) as ProductInventory[];
+	}
 	const stamp = new Date().toISOString().slice(0, 10);
 
 	if (format === "json") {

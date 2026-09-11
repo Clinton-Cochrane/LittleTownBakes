@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { parsePickupWindowInput } from "@/lib/pickupWindows";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getLocalPickupWindows } from "@/lib/localData";
+import { isLocalMode, localMutationUnavailable } from "@/lib/localMode";
 
 const SELECT_FIELDS = "id, start_at, end_at, enabled, created_at, updated_at";
 
 export async function GET() {
 	const authorization = await requireAdmin();
 	if (!authorization.authorized) return authorization.response;
+	if (isLocalMode()) return NextResponse.json(await getLocalPickupWindows(true));
 
 	const { data, error } = await getSupabaseAdmin()
 		.from("pickup_windows")
@@ -20,6 +23,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
 	const authorization = await requireAdmin();
 	if (!authorization.authorized) return authorization.response;
+	if (isLocalMode()) return localMutationUnavailable();
 
 	let body: unknown;
 	try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }

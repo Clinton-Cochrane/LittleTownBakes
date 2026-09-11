@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+		"dev:local": "node scripts/reset-local-data.mjs --if-missing && LOCAL_DATA_SOURCE=json next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
 		"test": "vitest run",
 		"test:db": "bash scripts/test-inventory-db.sh",
     "test:smoke": "node scripts/smoke.mjs",
+		"local:reset": "node scripts/reset-local-data.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {

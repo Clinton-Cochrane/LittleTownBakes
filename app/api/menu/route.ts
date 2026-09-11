@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import menuFixture from "@/fixtures/menu.json";
 import type { Category, Item, MenuResponse } from "@/lib/menuCatalog";
 import { getQuantityOnHand, type ProductInventory } from "@/lib/inventory";
+import { getLocalMenu } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 type CategoryRow = {
 	id: string;
@@ -70,6 +72,9 @@ function shouldUseMenuFixture({
 
 export async function GET() {
 	try {
+		if (isLocalMode()) {
+			return NextResponse.json(await getLocalMenu());
+		}
 		if (shouldUseMenuFixture()) {
 			return NextResponse.json(menuFixture satisfies MenuResponse);
 		}

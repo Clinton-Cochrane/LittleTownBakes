@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), update: vi.fn(), eqSelect: vi.fn(), eqUpdate: vi.fn(), eqStatus: vi.fn(), maybeSingle: vi.fn(), auth: vi.fn(), notify: vi.fn() }));
-vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth }));
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth, requireWritableAdmin: mocks.auth }));
 vi.mock("@/lib/supabaseAdmin", () => ({ getSupabaseAdmin: () => ({ from: mocks.from, rpc: mocks.rpc }) }));
 vi.mock("@/lib/notify", () => ({ notifyStatusChange: mocks.notify }));
 import { POST } from "./route";

@@ -5,6 +5,7 @@ import {
 	OrdersNavIcon,
 	PastFlavorsNavIcon,
 } from "@/components/icons/navIcons";
+import { isLocalMode } from "@/lib/localMode";
 
 const links = [
 	{ href: "/admin/orders", label: "Orders", Icon: OrdersNavIcon },
@@ -32,12 +33,14 @@ function NavigationLinks() {
 }
 
 export function AdminNavigation() {
+	const localMode = isLocalMode();
 	return (
-		<nav
-			className="border-b border-amber-200/80 bg-gradient-to-r from-wheat via-peach-mist/60 to-parchment"
-			aria-label="Admin"
-		>
-			<div className="mx-auto max-w-5xl px-4 py-3 sm:flex sm:items-center sm:justify-between sm:px-6">
+		<>
+			<nav
+				className="border-b border-amber-200/80 bg-gradient-to-r from-wheat via-peach-mist/60 to-parchment"
+				aria-label="Admin"
+			>
+				<div className="mx-auto max-w-5xl px-4 py-3 sm:flex sm:items-center sm:justify-between sm:px-6">
 				<div className="flex items-center justify-between gap-3">
 					<Link
 						href="/admin/orders"
@@ -59,7 +62,13 @@ export function AdminNavigation() {
 					<NavigationLinks />
 					<div className="ml-2 border-l border-crust pl-3"><LogoutButton /></div>
 				</div>
-			</div>
-		</nav>
+				</div>
+			</nav>
+			{localMode && (
+				<p className="bg-honey/15 px-4 py-2 text-center text-sm font-medium text-cocoa" role="status">
+					Local preview — admin changes are disabled.
+				</p>
+			)}
+		</>
 	);
 }

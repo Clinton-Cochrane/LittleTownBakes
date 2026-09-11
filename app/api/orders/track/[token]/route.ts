@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { FulfillmentStatus, OrderRecord } from "@/lib/orderTypes";
 import { isValidTrackingToken, toPublicOrderTracking } from "@/lib/orderTracking";
+import { getLocalOrderByTrackingToken } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 
@@ -15,6 +17,11 @@ export async function GET(
 ) {
 	const { token } = await context.params;
 	if (!isValidTrackingToken(token)) return notFound();
+	if (isLocalMode()) {
+		const row = await getLocalOrderByTrackingToken(token);
+		if (!row) return notFound();
+		return NextResponse.json(toPublicOrderTracking(row.status, row.payload), { headers: NO_STORE_HEADERS });
+	}
 
 	const supabase = getSupabaseAdmin();
 	const { data, error } = await supabase

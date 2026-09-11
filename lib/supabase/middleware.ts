@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicSupabaseConfig } from "@/lib/supabase/config";
+import { isLocalMode, LOCAL_ADMIN_COOKIE, LOCAL_ADMIN_COOKIE_VALUE } from "@/lib/localMode";
 
 function copySessionResponse(source: NextResponse, destination: NextResponse) {
 	source.cookies.getAll().forEach((cookie) => destination.cookies.set(cookie));
@@ -12,6 +13,14 @@ function copySessionResponse(source: NextResponse, destination: NextResponse) {
 }
 
 export async function updateSession(request: NextRequest) {
+	if (isLocalMode()) {
+		if (request.nextUrl.pathname === "/admin/login") return NextResponse.next({ request });
+		if (request.cookies.get(LOCAL_ADMIN_COOKIE)?.value === LOCAL_ADMIN_COOKIE_VALUE) {
+			return NextResponse.next({ request });
+		}
+		return NextResponse.redirect(new URL("/admin/login", request.url));
+	}
+
 	let response = NextResponse.next({ request });
 	const { url, publishableKey } = getPublicSupabaseConfig();
 	const supabase = createServerClient(

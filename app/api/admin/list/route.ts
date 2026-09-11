@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { AdminOrderRecord, OrderRecord } from "@/lib/orderTypes";
+import { listLocalOrders } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 /**
  * Admin list orders API.
@@ -11,9 +13,10 @@ import type { AdminOrderRecord, OrderRecord } from "@/lib/orderTypes";
 export async function GET(req: NextRequest) {
 	const authorization = await requireAdmin();
 	if (!authorization.authorized) return authorization.response;
+	const statusFilter = req.nextUrl.searchParams.get("status") ?? undefined;
+	if (isLocalMode()) return NextResponse.json(await listLocalOrders(statusFilter));
 
 	const supabase = getSupabaseAdmin();
-	const statusFilter = req.nextUrl.searchParams.get("status") ?? undefined;
 
 	let query = supabase
 		.from("orders")
