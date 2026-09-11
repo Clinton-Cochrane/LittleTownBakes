@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MenuCatalog, Section, EnrichedItem } from "@/lib/menuCatalog";
 import { buildSections, formatCurrency } from "@/lib/menuCatalog";
-import { loadMenuCatalog } from "@/lib/loadMenuCatalog";
+import { loadMenu, refreshMenu } from "@/lib/menuLoader";
 import MenuSection from "./MenuSection";
 
 type MenuBrowserProps = {
@@ -45,7 +45,7 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 			setLoading(true);
 			setError(null);
 			try {
-				const data = await loadMenuCatalog();
+				const data = await loadMenu();
 				if (!alive) return;
 				setCatalog(data);
 			} catch (loadError) {
@@ -63,6 +63,22 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 			alive = false;
 		};
 	}, []);
+
+	async function retry() {
+		setLoading(true);
+		setError(null);
+		try {
+			setCatalog(await refreshMenu());
+		} catch (loadError) {
+			setError(
+				loadError instanceof Error
+					? loadError.message
+					: "Menu is currently unavailable. Please try again later."
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
 
 	const sections: Section[] = useMemo(() => buildSections(catalog), [catalog]);
 
@@ -90,10 +106,22 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 	}
 	if (error || !sections.length) {
 		return (
-			<div className="rounded-lg border border-crust bg-wheat p-8 text-center">
+			<div
+				className="rounded-lg border border-crust bg-wheat p-8 text-center"
+				role={error ? "alert" : undefined}
+			>
 				<p className="font-display text-lg text-cocoa">
 					{error ?? "No items available yet. Please check back later."}
 				</p>
+				{error && (
+					<button
+						type="button"
+						onClick={retry}
+						className="mt-4 rounded-lg bg-caramel px-5 py-2.5 font-semibold text-white transition-colors hover:bg-cocoa"
+					>
+						Try again
+					</button>
+				)}
 			</div>
 		);
 	}
