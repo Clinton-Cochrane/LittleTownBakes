@@ -99,12 +99,12 @@ export default function AdminInventoryPage() {
 		setMessage("Inventory saved.");
 	}
 
-	if (loading) return <main className="mx-auto max-w-5xl px-4 py-6"><p className="text-sage">Loading...</p></main>;
+	if (loading) return <main className="mx-auto max-w-5xl px-4 py-6"><p className="text-muted">Loading...</p></main>;
 
 	return (
 		<main className="mx-auto max-w-5xl px-4 py-6">
 			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Inventory</h1>
-			<p className="mb-6 text-sm text-sage">Set the exact quantity currently on hand for each product.</p>
+			<p className="mb-6 text-sm text-muted">Set the exact quantity currently on hand for each product.</p>
 			{error && <p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">{error}</p>}
 			{message && <p className="mb-4 text-sm text-success" role="status">{message}</p>}
 

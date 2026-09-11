@@ -38,7 +38,7 @@ export default function CartLine({ itemId, onRemove }: Props) {
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
 					<strong className="text-cocoa">{item.name}</strong>
-					<span className="text-sm text-sage shrink-0">{formatCurrency(item.price)} ea</span>
+					<span className="text-sm text-muted shrink-0">{formatCurrency(item.price)} ea</span>
 				</div>
 
 				<div className="mt-2 flex flex-wrap items-center gap-2">

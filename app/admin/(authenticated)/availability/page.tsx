@@ -81,12 +81,12 @@ export default function AdminAvailabilityPage() {
 		await loadWindows();
 	}
 
-	if (loading) return <main className="mx-auto max-w-4xl px-4 py-6"><p className="text-sage">Loading...</p></main>;
+	if (loading) return <main className="mx-auto max-w-4xl px-4 py-6"><p className="text-muted">Loading...</p></main>;
 
 	return (
 		<main className="mx-auto max-w-4xl px-4 py-6">
 			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Pickup availability</h1>
-			<p className="mb-6 text-sm text-sage">Create concrete pickup windows. All dates and times are Pacific Time.</p>
+			<p className="mb-6 text-sm text-muted">Create concrete pickup windows. All dates and times are Pacific Time.</p>
 			{error && <p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">{error}</p>}
 			{message && <p className="mb-4 text-sm text-success" role="status">{message}</p>}
 
@@ -111,13 +111,13 @@ export default function AdminAvailabilityPage() {
 
 			<section>
 				<h2 className="mb-3 font-display text-lg font-semibold text-cocoa">Pickup windows</h2>
-				{windows.length === 0 ? <p className="text-sage">No pickup windows configured.</p> : (
+				{windows.length === 0 ? <p className="text-muted">No pickup windows configured.</p> : (
 					<div className="space-y-3">
 						{windows.map((window) => (
 							<div key={window.id} className="card-warm flex flex-wrap items-center justify-between gap-3 p-4">
 								<div className="text-cocoa">
 									<span className="font-medium">{formatPickupWindow({ startAt: window.start_at, endAt: window.end_at }, "short")}</span>
-									<span className={`ml-3 text-sm ${window.enabled ? "text-success" : "text-sage"}`}>{window.enabled ? "Enabled" : "Disabled"}</span>
+									<span className={`ml-3 text-sm ${window.enabled ? "text-success" : "text-muted"}`}>{window.enabled ? "Enabled" : "Disabled"}</span>
 								</div>
 								<div className="flex gap-2">
 									<button type="button" onClick={() => beginEdit(window)} className="btn-secondary">Edit</button>

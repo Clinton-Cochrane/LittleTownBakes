@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-	/* Warm bakery palette — less stark white, more paper & honey */
-	--color-cream: #f2ebe3;
-	--color-wheat: #ead9c4;
-	--color-parchment: #e8dfd4;
-	--color-peach-mist: #f0e4db;
-	--color-honey: #c9956a;
-	--color-caramel: #7a5a12;
-	--color-cocoa: #4a3226;
-	--color-crust: #dccbb4;
-	--color-berry: #b84d6b;
-	--color-sage: #8a9b72;
-	--color-success: #6d8f62;
+	/* Warm bakery foundation */
+	--color-cream: #fff8ef;
+	--color-wheat: #f3e2c9;
+	--color-parchment: #f7ecdd;
+	--color-peach-mist: #f8e2d3;
+	--color-honey: #c7894d;
+	--color-caramel: #80512f;
+	--color-cocoa: #3d2922;
+	--color-crust: #dfc7ad;
+	--color-berry: #a33f5b;
+	--color-muted: #705d54;
+
+	/* Decorative accent and semantic state colors */
+	--color-powder: #b8d8e8;
+	--color-powder-mist: #e7f3f8;
+	--color-accent: #426b82;
+	--color-success: #4f7b56;
 
 	/* Typography - use next/font variables with fallbacks */
 	--font-display: var(--font-fraunces, "Fraunces", "Georgia", serif);
 	--font-body: var(--font-dm-sans, "DM Sans", "system-ui", sans-serif);
 
 	/* Shadows & depth */
-	--shadow-soft: 0 4px 12px rgba(91, 59, 42, 0.06);
-	--shadow-card: 0 8px 24px rgba(91, 59, 42, 0.08);
+	--shadow-soft: 0 4px 14px rgba(61, 41, 34, 0.07);
+	--shadow-card: 0 10px 28px rgba(61, 41, 34, 0.1);
 	--radius-card: 12px;
 	--radius-button: 10px;
 }
@@ -35,28 +40,22 @@
 	}
 
 	a:hover {
-		@apply text-honey;
+		@apply text-accent;
 	}
 
-	:focus-visible {
-		@apply outline-2 outline-offset-2 outline-honey;
-	}
-
-	button:focus-visible,
-	input:focus-visible,
-	textarea:focus-visible,
-	select:focus-visible {
-		@apply outline-2 outline-offset-2 outline-honey;
+	body :focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 3px;
 	}
 }
 
 @layer components {
 	.btn-primary {
-		@apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-button border border-caramel bg-honey px-4 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-caramel disabled:cursor-not-allowed disabled:opacity-60;
+		@apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-button border border-caramel bg-caramel px-4 py-2.5 font-semibold text-cream transition-colors duration-200 hover:border-cocoa hover:bg-cocoa hover:text-cream disabled:cursor-not-allowed disabled:opacity-60;
 	}
 
 	.btn-secondary {
-		@apply inline-flex items-center justify-center gap-2 rounded-button border border-crust bg-cream px-4 py-2.5 font-medium text-cocoa transition-colors duration-200 hover:bg-wheat hover:border-honey disabled:cursor-not-allowed disabled:opacity-60;
+		@apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-button border border-crust bg-cream px-4 py-2.5 font-medium text-cocoa transition-colors duration-200 hover:border-powder hover:bg-powder-mist disabled:cursor-not-allowed disabled:opacity-60;
 	}
 
 	.btn-danger {
@@ -64,10 +63,10 @@
 	}
 
 	.input-base {
-		@apply w-full rounded-lg border border-crust bg-cream px-3 py-2.5 text-cocoa transition-colors duration-200 placeholder:text-sage focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/30;
+		@apply w-full rounded-lg border border-crust bg-cream px-3 py-2.5 text-cocoa transition-colors duration-200 placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-powder/70;
 	}
 
 	.card-warm {
-		@apply rounded-card border border-crust bg-wheat shadow-soft;
+		@apply rounded-card border border-crust bg-parchment/80 shadow-soft;
 	}
 }

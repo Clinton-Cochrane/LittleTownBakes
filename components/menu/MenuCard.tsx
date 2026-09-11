@@ -95,7 +95,7 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 					)}
 
 					{item.maxPerOrder ? (
-						<span className="text-xs text-sage">Max {item.maxPerOrder} per order</span>
+						<span className="text-xs text-muted">Max {item.maxPerOrder} per order</span>
 					) : null}
 				</div>
 			</div>

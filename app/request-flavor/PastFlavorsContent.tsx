@@ -18,20 +18,20 @@ export function PastFlavorsContent({
 	error,
 }: PastFlavorsContentProps) {
 	if (loading) {
-		return <p role="status" aria-busy="true" className="text-sage">Loading past flavors...</p>;
+		return <p role="status" aria-busy="true" className="text-muted">Loading past flavors...</p>;
 	}
 
 	if (error) {
 		return (
 			<div role="alert" className="rounded-lg border border-crust bg-wheat p-6 text-cocoa">
 				<p className="font-display text-lg font-semibold">Past flavors are temporarily unavailable.</p>
-				<p className="mt-2 text-sm text-sage">{error}</p>
+				<p className="mt-2 text-sm text-muted">{error}</p>
 			</div>
 		);
 	}
 
 	if (archivedItems.length === 0) {
-		return <p className="text-sage">No past flavors at the moment. Check back later!</p>;
+		return <p className="text-muted">No past flavors at the moment. Check back later!</p>;
 	}
 
 	return (

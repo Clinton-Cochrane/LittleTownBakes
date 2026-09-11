@@ -6,6 +6,7 @@ import {
 	toInstagramUrl,
 	toTiktokUrl,
 } from "@/lib/aboutContent";
+import { BRAND } from "@/lib/brand";
 
 export default async function Home() {
 	const { about, howToOrder, contact } = await getAboutContent();
@@ -27,16 +28,20 @@ export default async function Home() {
 		|| contact.tiktok;
 
 	return (
-		<div className="mx-auto max-w-2xl">
+		<div className="mx-auto max-w-3xl">
 			<MenuPreloader />
-			<h1 className="mb-8 font-display text-3xl font-semibold text-cocoa">
-				About Little Town Bakes
-			</h1>
+			<section className="mb-10 overflow-hidden rounded-card border border-powder bg-gradient-to-br from-cream via-powder-mist/65 to-peach-mist p-6 shadow-card sm:p-9">
+				<div className="mb-5 h-1 w-16 rounded-full bg-accent" aria-hidden />
+				<h1 className="font-display text-4xl font-semibold tracking-tight text-cocoa sm:text-5xl">
+					{BRAND.name}
+				</h1>
+				<p className="mt-3 max-w-xl text-lg text-muted sm:text-xl">{BRAND.tagline}</p>
+			</section>
 
 			{hasAbout && (
 				<section className="mb-10">
-					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Our Story</h2>
-					<div className="flex flex-col gap-4 rounded-card border border-crust bg-wheat p-5 shadow-soft sm:p-6">
+					<h2 className="mb-4 font-display text-2xl font-semibold text-cocoa">Our Story</h2>
+					<div className="card-warm flex flex-col gap-4 p-5 sm:p-6">
 						{about.story && <p className="text-cocoa">{about.story}</p>}
 						{about.howWeBake && <p className="text-cocoa">{about.howWeBake}</p>}
 						{about.whoWeAre && <p className="text-cocoa">{about.whoWeAre}</p>}
@@ -48,7 +53,7 @@ export default async function Home() {
 			<div className="mb-10 text-center">
 				<Link
 					href="/menu"
-					className="inline-flex rounded-lg bg-caramel px-6 py-3 font-semibold text-white shadow-soft transition-colors hover:bg-cocoa"
+					className="btn-primary px-6 py-3 shadow-soft"
 				>
 					View Menu / Order
 				</Link>
@@ -57,7 +62,7 @@ export default async function Home() {
 			{hasHowToOrder && (
 				<section className="mb-10">
 					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">How to Order</h2>
-					<div className="flex flex-col gap-4 rounded-card border border-crust bg-wheat p-5 shadow-soft sm:p-6">
+					<div className="card-warm flex flex-col gap-4 p-5 sm:p-6">
 						{howToOrder.intro && <p className="text-cocoa">{howToOrder.intro}</p>}
 						{howToOrder.steps.length > 0 && (
 							<ol className="list-inside list-decimal space-y-2 text-cocoa">
@@ -102,18 +107,18 @@ export default async function Home() {
 			{hasContact && (
 				<section>
 					<h2 className="mb-4 font-display text-xl font-semibold text-cocoa">Contact</h2>
-					<div className="flex flex-wrap gap-4 rounded-card border border-crust bg-wheat p-5 shadow-soft sm:p-6">
-						{contact.email && <a href={`mailto:${contact.email}`} className="text-cocoa underline-offset-2 hover:text-honey hover:underline">{contact.email}</a>}
-						{phoneDigits && contact.phone && <a href={`tel:${phoneDigits}`} className="text-cocoa underline-offset-2 hover:text-honey hover:underline">{contact.phone}</a>}
-						{instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-honey hover:underline">Instagram</a>}
-						{facebookUrl && <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-honey hover:underline">Facebook</a>}
-						{tiktokUrl && <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-honey hover:underline">TikTok</a>}
+					<div className="card-warm flex flex-wrap gap-4 p-5 sm:p-6">
+						{contact.email && <a href={`mailto:${contact.email}`} className="text-cocoa underline-offset-2 hover:text-accent hover:underline">{contact.email}</a>}
+						{phoneDigits && contact.phone && <a href={`tel:${phoneDigits}`} className="text-cocoa underline-offset-2 hover:text-accent hover:underline">{contact.phone}</a>}
+						{instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-accent hover:underline">Instagram</a>}
+						{facebookUrl && <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-accent hover:underline">Facebook</a>}
+						{tiktokUrl && <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-cocoa underline-offset-2 hover:text-accent hover:underline">TikTok</a>}
 					</div>
 				</section>
 			)}
 
 			{!hasAbout && !hasHowToOrder && !hasContact && (
-				<p className="text-sage">
+				<p className="text-muted">
 					Content coming soon. Edit <code className="rounded bg-crust px-1 py-0.5 text-sm">public/about.json</code>{" "}
 					to add your story, ordering info, and contact details. See{" "}
 					<code className="rounded bg-crust px-1 py-0.5 text-sm">CONTENT_ABOUT.md</code> for prompts.

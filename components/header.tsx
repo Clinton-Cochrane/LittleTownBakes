@@ -1,81 +1,96 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import CartSheet from "./cart/CartSheet";
 import { useCart } from "./cart/useCart";
-import { useRouter } from "next/navigation";
-import { AboutNavIcon, MenuNavIcon, PastFlavorsNavIcon } from "@/components/icons/navIcons";
+import { usePathname, useRouter } from "next/navigation";
+import { HomeNavIcon, MenuNavIcon, PastFlavorsNavIcon } from "@/components/icons/navIcons";
+import ShoppingBagIcon from "@/components/icons/ShoppingBagIcon";
+import { BRAND } from "@/lib/brand";
 
 const navLinkClass =
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium text-cocoa transition-colors hover:bg-amber-50/80 hover:text-caramel md:px-4";
+	"inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold transition-colors hover:bg-powder-mist hover:text-accent md:px-4";
+
+const navItems = [
+	{ href: "/", label: "Home", Icon: HomeNavIcon },
+	{ href: "/menu", label: "Menu", Icon: MenuNavIcon },
+	{ href: "/request-flavor", label: "Past flavors", Icon: PastFlavorsNavIcon },
+] as const;
 
 export default function Header() {
 	const [open, setOpen] = useState(false);
+	const [showLogo, setShowLogo] = useState(true);
 	const { items } = useCart();
 	const router = useRouter();
+	const pathname = usePathname();
 	const count = useMemo(() => items.reduce((n, i) => n + i.qty, 0), [items]);
 
 	return (
-		<header className="border-b border-amber-200/80 bg-gradient-to-b from-amber-50/95 via-parchment to-wheat shadow-soft">
-			<div className="mx-auto max-w-6xl px-4 pt-4 pb-0 sm:px-6 sm:pt-5">
-				<div className="text-center sm:text-left">
+		<header className="border-b border-powder bg-gradient-to-b from-cream via-parchment to-wheat shadow-soft">
+			<div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 sm:py-4">
+				<div className="flex justify-center sm:justify-start">
 					<Link
 						href="/"
-						className="font-display text-xl font-semibold tracking-tight text-cocoa transition-colors hover:text-caramel sm:text-2xl md:text-[1.65rem]"
+						className="group inline-flex min-w-0 items-center gap-3 rounded-lg text-left text-cocoa hover:text-cocoa"
 					>
-						Hometown Cottage Bakery
+						{showLogo && (
+							<Image
+								src={BRAND.logo.src}
+								alt={BRAND.logo.alt}
+								width={64}
+								height={64}
+								unoptimized
+								onError={() => setShowLogo(false)}
+								className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14"
+							/>
+						)}
+						<span className="min-w-0">
+							<span className="block font-display text-xl font-semibold tracking-tight sm:text-2xl md:text-[1.7rem]">
+								{BRAND.name}
+							</span>
+							<span className="mt-0.5 block text-xs font-medium text-muted sm:text-sm">
+								{BRAND.tagline}
+							</span>
+						</span>
 					</Link>
-					<p className="mt-1 font-body text-xs text-caramel/90 sm:text-sm">Little Town Bakes</p>
 				</div>
 			</div>
 
 			<nav
-				className="mt-3 border-t border-amber-200/70 bg-gradient-to-r from-amber-100/40 via-peach-mist/50 to-sage/15"
+				className="border-t border-powder/70 bg-gradient-to-r from-powder-mist/75 via-peach-mist/55 to-powder/35"
 				aria-label="Primary"
 			>
-				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2 py-2 sm:px-4 sm:py-3 md:px-6">
+				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2 py-2 sm:px-4 md:px-6">
 					<div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-1 sm:justify-start md:gap-2 lg:gap-3">
-						<Link href="/" className={navLinkClass}>
-							<span className="hidden md:inline" aria-hidden>
-								<AboutNavIcon className="text-caramel" size={20} />
-							</span>
-							Home
-						</Link>
-						<Link href="/menu" className={navLinkClass}>
-							<span className="hidden md:inline" aria-hidden>
-								<MenuNavIcon className="text-caramel" size={20} />
-							</span>
-							Menu
-						</Link>
-						<Link href="/request-flavor" className={navLinkClass}>
-							<span className="hidden md:inline" aria-hidden>
-								<PastFlavorsNavIcon className="text-caramel" size={20} />
-							</span>
-							Past flavors
-						</Link>
+						{navItems.map(({ href, label, Icon }) => {
+							const isCurrent = href === "/" ? pathname === href : pathname.startsWith(href);
+
+							return (
+								<Link
+									key={href}
+									href={href}
+									aria-current={isCurrent ? "page" : undefined}
+									className={`${navLinkClass} ${isCurrent ? "bg-powder text-cocoa shadow-soft" : "text-cocoa"}`}
+								>
+									<span className="hidden lg:inline" aria-hidden>
+										<Icon className={isCurrent ? "text-accent" : "text-caramel"} size={19} />
+									</span>
+									{label}
+								</Link>
+							);
+						})}
 					</div>
 					<div className="flex shrink-0 justify-center sm:justify-end">
 						<button
 							type="button"
 							onClick={() => setOpen(true)}
 							aria-label={`Open cart (${count} items)`}
-							className="inline-flex items-center gap-2 rounded-lg border border-crust/80 bg-cream/90 px-3 py-2.5 text-sm font-medium text-cocoa shadow-soft transition-colors hover:border-honey hover:bg-wheat hover:text-caramel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey md:px-4"
+							className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-crust bg-cream/95 px-3 py-2 text-sm font-semibold text-cocoa shadow-soft transition-colors hover:border-powder hover:bg-powder-mist hover:text-cocoa md:px-4"
 						>
 							<span className="hidden md:inline" aria-hidden>
-								<svg
-									width={20}
-									height={20}
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-									className="text-caramel"
-								>
-									<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-									<line x1="3" y1="6" x2="21" y2="6" />
-									<path d="M16 10a4 4 0 0 1-8 0" />
-								</svg>
+								<ShoppingBagIcon className="text-caramel" size={19} />
 							</span>
 							Cart
 							{count > 0 && (

@@ -9,7 +9,7 @@ export default function OrderSummary() {
 	const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.qty, 0), [items]);
 
 	if (!items.length) {
-		return <p className="text-sage">Your cart is empty.</p>;
+		return <p className="text-muted">Your cart is empty.</p>;
 	}
 
 	return (
@@ -23,7 +23,7 @@ export default function OrderSummary() {
 					>
 						<div>
 							<div className="font-semibold text-cocoa">{it.name}</div>
-							<div className="text-xs text-sage">
+							<div className="text-xs text-muted">
 								{formatCurrency(it.price)} × {it.qty}
 							</div>
 						</div>
@@ -33,10 +33,10 @@ export default function OrderSummary() {
 			</div>
 
 			<div className="mt-4 flex justify-between">
-				<span className="text-sage">Subtotal</span>
+				<span className="text-muted">Subtotal</span>
 				<span className="text-cocoa">{formatCurrency(subtotal)}</span>
 			</div>
-			<p className="mt-2 text-xs text-sage">Final pricing is confirmed from the current catalog when you place the order.</p>
+			<p className="mt-2 text-xs text-muted">Final pricing is confirmed from the current catalog when you place the order.</p>
 			<div className="mt-4 flex justify-between font-bold text-cocoa">
 				<span>Total</span>
 				<span>{formatCurrency(subtotal)}</span>
