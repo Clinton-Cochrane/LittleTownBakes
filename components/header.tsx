@@ -38,15 +38,15 @@ export default function Header() {
 					<div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-1 sm:justify-start md:gap-2 lg:gap-3">
 						<Link href="/" className={navLinkClass}>
 							<span className="hidden md:inline" aria-hidden>
+								<AboutNavIcon className="text-caramel" size={20} />
+							</span>
+							Home
+						</Link>
+						<Link href="/menu" className={navLinkClass}>
+							<span className="hidden md:inline" aria-hidden>
 								<MenuNavIcon className="text-caramel" size={20} />
 							</span>
 							Menu
-						</Link>
-						<Link href="/about" className={navLinkClass}>
-							<span className="hidden md:inline" aria-hidden>
-								<AboutNavIcon className="text-caramel" size={20} />
-							</span>
-							About
 						</Link>
 						<Link href="/request-flavor" className={navLinkClass}>
 							<span className="hidden md:inline" aria-hidden>
