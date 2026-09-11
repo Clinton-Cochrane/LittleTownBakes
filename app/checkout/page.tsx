@@ -92,8 +92,8 @@ export default function CheckoutPage() {
 			<div className="grid gap-6">
 				<section className="card-warm p-6 sm:p-8">
 					<h2 className="mb-2 font-display text-xl font-semibold text-cocoa">Pickup time</h2>
-					<p className="mb-4 text-sm text-sage">Choose a bakery pickup window. All times are Pacific Time.</p>
-					{pickupLoading ? <p className="text-sage">Loading pickup times...</p> : pickupWindows.length === 0 ? (
+					<p className="mb-4 text-sm text-muted">Choose a bakery pickup window. All times are Pacific Time.</p>
+					{pickupLoading ? <p className="text-muted">Loading pickup times...</p> : pickupWindows.length === 0 ? (
 						<p className="rounded-lg bg-berry/10 px-4 py-3 text-cocoa" role="status">No pickup times are currently available. Please check back soon.</p>
 					) : (
 						<label>
@@ -125,7 +125,7 @@ export default function CheckoutPage() {
 							{error}
 						</p>
 					)}
-					<p className="mt-4 text-sm text-sage">
+					<p className="mt-4 text-sm text-muted">
 						{paymentMethod === "venmo"
 							? "After you pay via Venmo, we'll confirm and update your order status."
 							: paymentMethod === "zelle"

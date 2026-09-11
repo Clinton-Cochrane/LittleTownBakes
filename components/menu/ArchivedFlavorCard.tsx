@@ -11,7 +11,7 @@ export function ArchivedFlavorCard({ item }: { item: ArchivedItem }) {
 			</div>
 			<div>
 				<h2 className="font-display text-lg font-semibold text-cocoa">{item.name}</h2>
-				{item.description && <p className="mt-1 line-clamp-2 text-sm text-sage">{item.description}</p>}
+				{item.description && <p className="mt-1 line-clamp-2 text-sm text-muted">{item.description}</p>}
 			</div>
 			<DemandSignalButton productId={item.id} label="Bring this back" className="btn-secondary w-full" />
 		</article>

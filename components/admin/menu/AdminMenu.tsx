@@ -176,22 +176,22 @@ export function AdminMenu() {
 	}
 
 	const views = splitMenuProducts(products);
-	if (loading) return <p className="py-10 text-center text-sage" role="status">Loading menu…</p>;
+	if (loading) return <p className="py-10 text-center text-muted" role="status">Loading menu…</p>;
 	if (loadError) return <div className="py-8"><p className="rounded-lg bg-berry/10 px-4 py-3 text-berry" role="alert">{loadError}</p><button className="btn-primary mt-4" onClick={() => void loadMenu()}>Try Again</button></div>;
 
 	return (
 		<>
 			<div className="flex items-start justify-between gap-3">
-				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Menu</h1><p className="mt-1 text-sm text-sage">Manage what is available today.</p></div>
+				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Menu</h1><p className="mt-1 text-sm text-muted">Manage what is available today.</p></div>
 				<button type="button" className="btn-primary shrink-0" onClick={() => setEditing(null)} disabled={categories.length === 0}>Add Product</button>
 			</div>
 			<div className="mt-6 grid grid-cols-2 rounded-button border border-crust bg-wheat p-1" role="tablist" aria-label="Menu views">
-				<button type="button" role="tab" aria-selected={view === "current"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "current" ? "bg-cream text-cocoa shadow-soft" : "text-sage"}`} onClick={() => chooseView("current")}>Current Menu ({views.active.length})</button>
-				<button type="button" role="tab" aria-selected={view === "past"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "past" ? "bg-cream text-cocoa shadow-soft" : "text-sage"}`} onClick={() => chooseView("past")}>Past Flavors ({views.archived.length})</button>
+				<button type="button" role="tab" aria-selected={view === "current"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "current" ? "bg-cream text-cocoa shadow-soft" : "text-muted"}`} onClick={() => chooseView("current")}>Current Menu ({views.active.length})</button>
+				<button type="button" role="tab" aria-selected={view === "past"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "past" ? "bg-cream text-cocoa shadow-soft" : "text-muted"}`} onClick={() => chooseView("past")}>Past Flavors ({views.archived.length})</button>
 			</div>
 			<section className="mt-5 grid gap-4" aria-label={view === "current" ? "Current menu" : "Past Flavors"}>
 				{view === "current" ? views.active.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />) : views.archived.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
-				{(view === "current" ? views.active : views.archived).length === 0 && <p className="card-warm p-5 text-sage">{view === "current" ? "No products are on the current menu yet." : "No Past Flavors yet."}</p>}
+				{(view === "current" ? views.active : views.archived).length === 0 && <p className="card-warm p-5 text-muted">{view === "current" ? "No products are on the current menu yet." : "No Past Flavors yet."}</p>}
 			</section>
 			{editing !== undefined && <ProductForm key={editing?.id ?? "new"} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} onProductSaved={updateProduct} onComplete={() => setEditing(undefined)} />}
 		</>

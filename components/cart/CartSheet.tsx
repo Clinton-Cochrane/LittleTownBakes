@@ -83,7 +83,7 @@ export default function CartSheet({ open, onClose, onCheckout }: CartSheetProps)
 
 				<div className="flex-1 overflow-auto px-4 pb-24 pt-2">
 					{items.length === 0 ? (
-						<p className="text-sm text-sage">Your cart is empty. Add something delicious!</p>
+						<p className="text-sm text-muted">Your cart is empty. Add something delicious!</p>
 					) : (
 						<>
 							{groups.map((g) => (
@@ -97,7 +97,7 @@ export default function CartSheet({ open, onClose, onCheckout }: CartSheetProps)
 								</section>
 							))}
 							<div className="mt-4">
-								<label htmlFor="order-notes" className="mb-1.5 block text-xs text-sage">
+								<label htmlFor="order-notes" className="mb-1.5 block text-xs text-muted">
 									Order Notes (optional)
 								</label>
 								<textarea
@@ -115,10 +115,10 @@ export default function CartSheet({ open, onClose, onCheckout }: CartSheetProps)
 				<div className="sticky bottom-0 border-t border-crust bg-cream p-5">
 					<div className="mb-4 grid gap-2">
 						<div className="flex justify-between">
-							<span className="text-sm text-sage">Subtotal</span>
+							<span className="text-sm text-muted">Subtotal</span>
 							<span className="font-semibold">{formatCurrency(subtotal)}</span>
 						</div>
-						<p className="text-xs text-sage">Final pricing is confirmed from the current catalog when the order is placed.</p>
+						<p className="text-xs text-muted">Final pricing is confirmed from the current catalog when the order is placed.</p>
 						<div className="flex justify-between font-bold">
 							<span>Total</span>
 							<span className="text-lg">{formatCurrency(subtotal)}</span>

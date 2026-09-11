@@ -46,7 +46,7 @@ export default function OrderPage() {
 	if (!order)
 		return (
 			<main className="px-4 py-6">
-				<p className="text-sage">Loading order…</p>
+				<p className="text-muted">Loading order…</p>
 			</main>
 		);
 
@@ -64,16 +64,16 @@ export default function OrderPage() {
 				</div>
 			)}
 			<div className="mb-6 rounded-lg border border-crust bg-wheat px-4 py-3">
-				<span className="text-sage">Status:</span>{" "}
+				<span className="text-muted">Status:</span>{" "}
 				<strong className="text-cocoa">{order.fulfillmentStatus.replaceAll("_", " ")}</strong>
-				<span className="ml-4 text-sage">Payment:</span>{" "}
+				<span className="ml-4 text-muted">Payment:</span>{" "}
 				<strong className="text-cocoa">{order.payment.status}</strong>
 			</div>
 			{order.pickup && (
 				<div className="mb-6 rounded-lg border border-crust bg-wheat px-4 py-3 text-cocoa">
-					<span className="text-sage">Pickup:</span>{" "}
+					<span className="text-muted">Pickup:</span>{" "}
 					<strong>{formatPickupWindow(order.pickup)}</strong>
-					<span className="ml-2 text-sm text-sage">Pacific Time</span>
+					<span className="ml-2 text-sm text-muted">Pacific Time</span>
 				</div>
 			)}
 
@@ -85,7 +85,7 @@ export default function OrderPage() {
 					>
 						<div>
 							<div className="font-semibold text-cocoa">{i.name}</div>
-							<div className="text-xs text-sage">
+							<div className="text-xs text-muted">
 								{formatCurrency(i.unitPriceCents / 100)} × {i.quantity}
 							</div>
 						</div>
@@ -93,7 +93,7 @@ export default function OrderPage() {
 					</div>
 				))}
 				<div className="mt-4 flex justify-between font-semibold text-cocoa">
-					<span className="text-sage">Total</span>
+					<span className="text-muted">Total</span>
 					<span>{formatCurrency(order.totals.totalCents / 100)}</span>
 				</div>
 			</section>

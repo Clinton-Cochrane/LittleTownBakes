@@ -100,7 +100,7 @@ export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrows
 						))}
 					</div>
 				</div>
-				<p className="text-center text-sm text-sage">Loading menu...</p>
+				<p className="text-center text-sm text-muted">Loading menu...</p>
 			</div>
 		);
 	}

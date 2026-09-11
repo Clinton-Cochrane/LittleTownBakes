@@ -17,7 +17,7 @@ export default async function AdminLogin({
 		<main className="mx-auto max-w-md px-4 py-8">
 			<div className="card-warm p-6 sm:p-8">
 				<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Admin Login</h1>
-				<p className="mb-4 text-sm text-sage">Sign in with your bakery admin account</p>
+				<p className="mb-4 text-sm text-muted">Sign in with your bakery admin account</p>
 				{localMode && (
 					<p className="mb-4 rounded-lg border border-crust bg-cream px-4 py-3 text-sm text-cocoa" role="status">
 						Local login: <strong>{LOCAL_ADMIN_EMAIL}</strong> / <strong>{LOCAL_ADMIN_PASSWORD}</strong>

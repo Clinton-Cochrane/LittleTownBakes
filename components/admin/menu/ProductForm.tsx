@@ -138,7 +138,7 @@ export function ProductForm({ product, categories, onCancel, onSave, onProductSa
 								{hasPhoto ? "Replace Photo" : "Choose Photo"}
 								<input type="file" className="sr-only" accept="image/jpeg,image/png,image/webp,image/gif" onChange={choosePhoto} disabled={saving} />
 							</label>
-							<p className="mt-2 break-words text-xs text-sage" role="status">{photoStatus}</p>
+							<p className="mt-2 break-words text-xs text-muted" role="status">{photoStatus}</p>
 							{photoStage === "failed" && savedProduct && selectedFile && <button type="button" className="mt-2 min-h-11 font-semibold text-caramel underline underline-offset-4" onClick={() => void retryPhoto()} disabled={saving}>Retry Photo</button>}
 						</div>
 					</div>

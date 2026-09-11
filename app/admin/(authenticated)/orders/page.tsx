@@ -63,7 +63,7 @@ export default function AdminOrders() {
 	return (
 		<main className="mx-auto max-w-4xl px-4 py-6">
 			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Orders</h1>
-			<p className="mb-6 text-sm text-sage">
+			<p className="mb-6 text-sm text-muted">
 				Track payment independently while moving fulfillment from received through pickup.
 			</p>
 
@@ -74,7 +74,7 @@ export default function AdminOrders() {
 			)}
 
 			{orders.length === 0 && !error ? (
-				<p className="text-sage">No orders yet.</p>
+				<p className="text-muted">No orders yet.</p>
 			) : (
 				<div className="flex flex-col gap-6">
 					{orders.map((o) => (
@@ -102,7 +102,7 @@ function OrderCard({
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<div>
 					<strong className="text-cocoa">#{o.id}</strong>
-					<span className="mx-2 text-sage">—</span>
+					<span className="mx-2 text-muted">—</span>
 					<span className="text-cocoa">{o.customer.name}</span>
 				</div>
 				{o.trackingToken && (
@@ -157,7 +157,7 @@ function OrderCard({
 														? "bg-success text-white"
 														: active
 															? "bg-honey text-white ring-2 ring-honey/40 ring-offset-2 ring-offset-wheat"
-															: "border border-crust bg-cream text-sage"
+															: "border border-crust bg-cream text-muted"
 												}`}
 											>
 												{done ? "✓" : i + 1}
@@ -171,7 +171,7 @@ function OrderCard({
 										</div>
 										<span
 											className={`mt-2 max-w-28 text-center text-[10px] font-medium leading-tight sm:text-xs ${
-												active ? "text-cocoa" : "text-sage"
+												active ? "text-cocoa" : "text-muted"
 											}`}
 										>
 											{orderStatusActionLabel(step)}

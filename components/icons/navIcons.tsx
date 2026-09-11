@@ -4,7 +4,7 @@ function iconSize(size: number | undefined) {
 	return size ?? 20;
 }
 
-export function MenuNavIcon({ className = "text-honey", size }: IconProps) {
+export function HomeNavIcon({ className = "text-caramel", size }: IconProps) {
 	const s = iconSize(size);
 	return (
 		<svg
@@ -13,19 +13,19 @@ export function MenuNavIcon({ className = "text-honey", size }: IconProps) {
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.8"
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			className={className}
 			aria-hidden
 		>
-			<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-			<polyline points="9 22 9 12 15 12 15 22" />
+			<path d="m3 10 9-7 9 7" />
+			<path d="M5 9v11h14V9M9 20v-6h6v6" />
 		</svg>
 	);
 }
 
-export function AboutNavIcon({ className = "text-honey", size }: IconProps) {
+export function MenuNavIcon({ className = "text-caramel", size }: IconProps) {
 	const s = iconSize(size);
 	return (
 		<svg
@@ -34,19 +34,19 @@ export function AboutNavIcon({ className = "text-honey", size }: IconProps) {
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.8"
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			className={className}
 			aria-hidden
 		>
-			<circle cx="12" cy="12" r="10" />
-			<path d="M12 16v-4M12 8h.01" />
+			<path d="M4 20v-8a8 8 0 0 1 16 0v8H4Z" />
+			<path d="M8 9.5 10 12M13 7l1.5 3M16 10l2 2" />
 		</svg>
 	);
 }
 
-export function PastFlavorsNavIcon({ className = "text-honey", size }: IconProps) {
+export function PastFlavorsNavIcon({ className = "text-caramel", size }: IconProps) {
 	const s = iconSize(size);
 	return (
 		<svg
@@ -55,14 +55,14 @@ export function PastFlavorsNavIcon({ className = "text-honey", size }: IconProps
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth="1.8"
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			className={className}
 			aria-hidden
 		>
-			<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-			<circle cx="12" cy="12" r="4" />
+			<path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+			<path d="M3 3v5h5M12 7v5l3 2" />
 		</svg>
 	);
 }

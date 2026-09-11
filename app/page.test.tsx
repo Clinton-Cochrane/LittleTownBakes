@@ -6,7 +6,9 @@ describe("Home route", () => {
 	it("renders the approved bakery story and a Menu CTA instead of the catalog", async () => {
 		const html = renderToStaticMarkup(await Home());
 
-		expect(html).toContain("About Little Town Bakes");
+		expect(html).toContain("Little Town Bakes");
+		expect(html).toContain("Fresh from our hearth to your home.");
+		expect(html).toContain("Our Story");
 		expect(html).toContain("Little Town Bakes began in a home kitchen");
 		expect(html).toContain('href="/menu"');
 		expect(html).toContain("View Menu");

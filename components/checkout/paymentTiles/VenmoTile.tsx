@@ -13,7 +13,7 @@ export default function VenmoTile({ venmoHandle }: Props) {
 			/>
 			<div className="min-w-0 flex-1">
 				<div className="font-display font-semibold text-cocoa">Pay with Venmo</div>
-				<div className="mb-3 text-sm text-sage">
+				<div className="mb-3 text-sm text-muted">
 					Scan or send to <strong className="text-cocoa">{venmoHandle}</strong>.
 				</div>
 				<div className="flex flex-wrap gap-2">
