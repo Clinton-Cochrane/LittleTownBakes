@@ -81,7 +81,7 @@ export function AdminMenu() {
 	function adjust(productId: string, delta: number) {
 		setProductErrors((current) => ({ ...current, [productId]: "" }));
 		setPending((current) => ({ ...current, [productId]: (current[productId] ?? 0) + 1 }));
-		void queue.current.enqueue(productId, async () => {
+		return queue.current.enqueue(productId, async () => {
 			try {
 				const response = await fetch("/api/admin/inventory/adjust", {
 					method: "POST",

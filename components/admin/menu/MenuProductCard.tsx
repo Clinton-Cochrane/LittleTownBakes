@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { parseRefillAmount, type AdminMenuProduct } from "@/lib/adminMenu";
 
 type MenuProductCardProps = {
 	product: AdminMenuProduct;
 	pending?: number;
 	error?: string;
-	onAdjust: (delta: number) => void;
+	onAdjust: (delta: number) => void | Promise<void>;
 	onEdit: () => void;
 	onArchive: () => void;
 };
@@ -16,19 +16,30 @@ export function MenuProductCard({ product, pending = 0, error, onAdjust, onEdit,
 	const [refilling, setRefilling] = useState(false);
 	const [amount, setAmount] = useState("");
 	const [refillError, setRefillError] = useState<string | null>(null);
+	const [submittingRefill, setSubmittingRefill] = useState(false);
+	const refillRequestInFlight = useRef(false);
 	const soldOut = product.quantityOnHand === 0;
 
-	function submitRefill(event: React.FormEvent) {
+	async function submitRefill(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		const parsed = parseRefillAmount(amount);
+		if (refillRequestInFlight.current) return;
+		const submittedAmount = new FormData(event.currentTarget).get("amount");
+		const parsed = typeof submittedAmount === "string" ? parseRefillAmount(submittedAmount) : null;
 		if (parsed === null) {
 			setRefillError("Enter a whole number, 0 or more.");
 			return;
 		}
 		setRefillError(null);
-		onAdjust(parsed);
-		setAmount("");
-		setRefilling(false);
+		refillRequestInFlight.current = true;
+		setSubmittingRefill(true);
+		try {
+			await onAdjust(parsed);
+			setAmount("");
+			setRefilling(false);
+		} finally {
+			refillRequestInFlight.current = false;
+			setSubmittingRefill(false);
+		}
 	}
 
 	return (
@@ -49,12 +60,12 @@ export function MenuProductCard({ product, pending = 0, error, onAdjust, onEdit,
 					<button type="button" className="min-h-12 rounded-button px-3 font-semibold text-caramel underline decoration-caramel/40 underline-offset-4" onClick={onEdit}>Edit</button>
 				</div>
 			</div>
-			{(error || refillError) && <p className="mt-3 rounded-lg bg-berry/10 px-3 py-2 text-sm text-berry" role="alert">{error ?? refillError}</p>}
+			{(error || refillError) && <p className="mt-3 rounded-lg bg-berry/10 px-3 py-2 text-sm text-berry" role="alert">{error || refillError}</p>}
 			<div className="mt-3 flex items-center gap-4 border-t border-crust pt-3 text-sm">
 				<button type="button" className="min-h-11 font-semibold text-caramel underline underline-offset-4" onClick={() => setRefilling((current) => !current)}>Refill</button>
 				<button type="button" className="min-h-11 text-berry underline underline-offset-4" onClick={onArchive}>Archive</button>
 			</div>
-			{refilling && <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={submitRefill}><label className="min-w-0 flex-1"><span className="mb-1 block text-sm font-medium">Add</span><input className="input-base" inputMode="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="12" aria-label={`Refill amount for ${product.name}`} /></label><button type="submit" className="btn-primary">Confirm</button></form>}
+			{refilling && <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={submitRefill}><label className="min-w-0 flex-1"><span className="mb-1 block text-sm font-medium">Add</span><input className="input-base" name="amount" inputMode="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="12" aria-label={`Refill amount for ${product.name}`} /></label><button type="submit" className="btn-primary" disabled={submittingRefill || pending > 0}>{submittingRefill ? "Refilling…" : "Confirm"}</button></form>}
 		</article>
 	);
 }
