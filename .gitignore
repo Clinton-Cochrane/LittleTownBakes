@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# generated JSON-backed local development data
+/.local/
+
 # next.js
 /.next/
 /out/

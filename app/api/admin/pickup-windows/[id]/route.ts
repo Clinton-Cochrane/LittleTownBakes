@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminAuth";
+import { requireWritableAdmin } from "@/lib/adminAuth";
 import { parsePickupWindowInput, validatePickupWindowTimes } from "@/lib/pickupWindows";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -7,7 +7,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
 const SELECT_FIELDS = "id, start_at, end_at, enabled, created_at, updated_at";
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-	const authorization = await requireAdmin();
+	const authorization = await requireWritableAdmin();
 	if (!authorization.authorized) return authorization.response;
 	const { id } = await context.params;
 	if (!UUID_PATTERN.test(id)) return NextResponse.json({ error: "Invalid pickup window ID." }, { status: 400 });

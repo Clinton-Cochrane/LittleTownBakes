@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminAuth";
+import { requireWritableAdmin } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { FulfillmentStatus, OrderRecord, PaymentStatus } from "@/lib/orderTypes";
 import { notifyStatusChange } from "@/lib/notify";
 import { isValidOrderStatusTransition } from "@/lib/orderStatusFlow";
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-	const authorization = await requireAdmin();
+	const authorization = await requireWritableAdmin();
 	if (!authorization.authorized) return authorization.response;
 
 	const { id } = await context.params;

@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const { mockFrom, mockRequireAdmin, mockRpc } = vi.hoisted(() => ({
 	mockFrom: vi.fn(), mockRequireAdmin: vi.fn(), mockRpc: vi.fn(),
 }));
-vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin }));
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin, requireWritableAdmin: mockRequireAdmin }));
 vi.mock("@/lib/supabaseAdmin", () => ({ getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }) }));
 
 import { PATCH } from "./route";

@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { LOCAL_ADMIN_COOKIE, LOCAL_ADMIN_COOKIE_VALUE } from "@/lib/localMode";
 
 const { mockGetClaims } = vi.hoisted(() => ({
 	mockGetClaims: vi.fn(),
@@ -14,8 +15,24 @@ import { middleware } from "./middleware";
 describe("admin middleware", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.stubEnv("LOCAL_DATA_SOURCE", "");
 		process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
 		process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable-test-key";
+	});
+
+	afterEach(() => vi.unstubAllEnvs());
+
+	it("protects local admin pages with the local-only cookie without calling Supabase", async () => {
+		vi.stubEnv("NODE_ENV", "development");
+		vi.stubEnv("LOCAL_DATA_SOURCE", "json");
+		const anonymous = await middleware(new NextRequest("http://localhost/admin/orders"));
+		expect(anonymous.headers.get("location")).toBe("http://localhost/admin/login");
+
+		const request = new NextRequest("http://localhost/admin/orders");
+		request.cookies.set(LOCAL_ADMIN_COOKIE, LOCAL_ADMIN_COOKIE_VALUE);
+		const authenticated = await middleware(request);
+		expect(authenticated.headers.get("location")).toBeNull();
+		expect(mockGetClaims).not.toHaveBeenCalled();
 	});
 
 	it("does not trap the public admin login page", async () => {

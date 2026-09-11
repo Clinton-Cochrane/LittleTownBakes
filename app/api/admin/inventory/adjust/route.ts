@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminAuth";
+import { requireWritableAdmin } from "@/lib/adminAuth";
 import { adjustProductInventory } from "@/lib/inventoryUpsert";
 
 export async function POST(request: NextRequest) {
-	const authorization = await requireAdmin();
+	const authorization = await requireWritableAdmin();
 	if (!authorization.authorized) return authorization.response;
 
 	const body = await request.json().catch(() => null);

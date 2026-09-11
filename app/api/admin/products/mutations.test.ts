@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), update: vi.fn(), archive: vi.fn(), reorder: vi.fn() }));
-vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth }));
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth, requireWritableAdmin: mocks.auth }));
 vi.mock("@/lib/supabaseAdmin", () => ({ getSupabaseAdmin: vi.fn() }));
 vi.mock("@/lib/adminCatalog", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/adminCatalog")>();

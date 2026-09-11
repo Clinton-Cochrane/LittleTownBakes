@@ -6,7 +6,7 @@ const { mockRequireAdmin, mockAdjustProductInventory } = vi.hoisted(() => ({
 	mockAdjustProductInventory: vi.fn(),
 }));
 
-vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin }));
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mockRequireAdmin, requireWritableAdmin: mockRequireAdmin }));
 vi.mock("@/lib/inventoryUpsert", () => ({ adjustProductInventory: mockAdjustProductInventory }));
 
 import { POST } from "./route";

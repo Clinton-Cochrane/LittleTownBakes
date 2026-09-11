@@ -5,6 +5,8 @@ import { notifyNewOrder } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { validateOrderPayload } from "@/lib/orderValidation";
 import { createTrackingToken } from "@/lib/orderTracking";
+import { createLocalOrder, LocalOrderError } from "@/lib/localData";
+import { isLocalMode } from "@/lib/localMode";
 
 const EXPECTED_ERRORS = {
 	INVALID_PRODUCT: { status: 400, error: "One or more products are invalid." },
@@ -30,6 +32,15 @@ export async function POST(req: NextRequest) {
 		try { body = await req.json(); } catch { return NextResponse.json({ code: "INVALID_ORDER", error: "Invalid JSON body" }, { status: 400 }); }
 		const validation = validateOrderPayload(body);
 		if (!validation.ok) return NextResponse.json({ code: validation.code, error: validation.error }, { status: 400 });
+		if (isLocalMode()) {
+			try {
+				const result = await createLocalOrder(validation.data);
+				return NextResponse.json(result, { status: 201 });
+			} catch (error) {
+				if (error instanceof LocalOrderError) return databaseError(error.code);
+				throw error;
+			}
+		}
 
 		const id = `ord_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
 		const trackingToken = createTrackingToken();

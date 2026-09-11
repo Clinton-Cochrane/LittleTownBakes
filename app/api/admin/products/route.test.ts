@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	list: vi.fn(),
 }));
 
-vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth }));
+vi.mock("@/lib/adminAuth", () => ({ requireAdmin: mocks.auth, requireWritableAdmin: mocks.auth }));
 vi.mock("@/lib/supabaseAdmin", () => ({ getSupabaseAdmin: vi.fn() }));
 vi.mock("@/lib/adminCatalog", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/adminCatalog")>();

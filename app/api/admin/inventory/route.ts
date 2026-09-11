@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { setProductInventory } from "@/lib/inventoryUpsert";
+import { getLocalInventory } from "@/lib/localData";
+import { isLocalMode, localMutationUnavailable } from "@/lib/localMode";
 
 export async function GET() {
 	const authorization = await requireAdmin();
 	if (!authorization.authorized) return authorization.response;
+	if (isLocalMode()) return NextResponse.json(await getLocalInventory());
 
 	const { data, error } = await supabaseAdmin
 		.from("product_inventory")
@@ -19,6 +22,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
 	const authorization = await requireAdmin();
 	if (!authorization.authorized) return authorization.response;
+	if (isLocalMode()) return localMutationUnavailable();
 
 	const body = await req.json();
 	const { product_id, quantity_on_hand } = body;
