@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { handleAdminAuthFailure } from "@/lib/adminResponse";
-import { formatPickupWindow, toPacificFormValues } from "@/lib/pickupWindows";
+import { formatPickupWindow, toPacificWindowFormValues } from "@/lib/pickupWindows";
 
 type PickupWindowRow = { id: string; start_at: string; end_at: string; enabled: boolean };
 type WindowForm = { date: string; startTime: string; endTime: string };
@@ -29,10 +29,8 @@ export default function AdminAvailabilityPage() {
 	useEffect(() => { void loadWindows().finally(() => setLoading(false)); }, []);
 
 	function beginEdit(window: PickupWindowRow) {
-		const start = toPacificFormValues(window.start_at);
-		const end = toPacificFormValues(window.end_at);
 		setEditingId(window.id);
-		setForm({ date: start.date, startTime: start.time, endTime: end.time });
+		setForm(toPacificWindowFormValues({ startAt: window.start_at, endAt: window.end_at }));
 		setError(null);
 		setMessage(null);
 	}
@@ -97,10 +95,12 @@ export default function AdminAvailabilityPage() {
 						<input type="date" required value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} className="input-base" />
 					</label>
 					<label><span className="mb-1.5 block text-sm font-medium text-cocoa">Start time</span>
-						<input type="time" step={60} required value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="input-base" />
+						<input type="time" step={60} value={form.startTime} onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))} className="input-base" />
+						<span className="mt-1 block text-xs text-muted">Blank = beginning of day (or now, if today)</span>
 					</label>
 					<label><span className="mb-1.5 block text-sm font-medium text-cocoa">End time</span>
-						<input type="time" step={60} required value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="input-base" />
+						<input type="time" step={60} value={form.endTime} onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))} className="input-base" />
+						<span className="mt-1 block text-xs text-muted">Blank = end of day</span>
 					</label>
 					<div className="flex flex-wrap gap-2 sm:col-span-3">
 						<button type="submit" disabled={saving} className="btn-primary">{saving ? "Saving..." : editingId ? "Save changes" : "Add window"}</button>

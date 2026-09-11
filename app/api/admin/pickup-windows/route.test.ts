@@ -37,6 +37,22 @@ describe("POST /api/admin/pickup-windows", () => {
 		});
 	});
 
+	it.each([
+		["blank start and end", { date: "2099-09-18", startTime: "", endTime: "" }, "2099-09-18T07:00:00.000Z", "2099-09-19T07:00:00.000Z"],
+		["blank end", { date: "2099-09-18", startTime: "14:00", endTime: "" }, "2099-09-18T21:00:00.000Z", "2099-09-19T07:00:00.000Z"],
+		["blank start", { date: "2099-09-18", startTime: "", endTime: "18:00" }, "2099-09-18T07:00:00.000Z", "2099-09-19T01:00:00.000Z"],
+	])("allows an admin to create a window with %s", async (_name, body, startAt, endAt) => {
+		const single = vi.fn().mockResolvedValue({ data: { id: "window-1" }, error: null });
+		const select = vi.fn(() => ({ single }));
+		const insert = vi.fn(() => ({ select }));
+		mockFrom.mockReturnValue({ insert });
+
+		const response = await POST(request(body));
+
+		expect(response.status).toBe(201);
+		expect(insert).toHaveBeenCalledWith({ start_at: startAt, end_at: endAt, enabled: true });
+	});
+
 	it("rejects equal or reversed times", async () => {
 		const response = await POST(request({ date: "2099-09-18", startTime: "18:42", endTime: "18:42" }));
 		expect(response.status).toBe(400);
