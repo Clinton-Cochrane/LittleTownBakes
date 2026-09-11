@@ -53,6 +53,16 @@ describe("admin middleware", () => {
 		expect(response.headers.get("location")).toBe("http://localhost/admin/login");
 	});
 
+	it.each(["/admin/orders", "/admin/menu", "/admin/inventory", "/admin/availability", "/admin/menu?view=past"])(
+		"redirects unauthenticated protected route %s to login",
+		async (pathname) => {
+			mockGetClaims.mockResolvedValue({ data: null, error: null });
+			const response = await middleware(new NextRequest(`http://localhost${pathname}`));
+			expect(response.status).toBe(307);
+			expect(response.headers.get("location")).toBe("http://localhost/admin/login");
+		},
+	);
+
 	it("redirects an authenticated non-admin", async () => {
 		mockGetClaims.mockResolvedValue({
 			data: { claims: { sub: "user-1", app_metadata: { role: "staff" } } },
