@@ -3,7 +3,6 @@ import { LogoutButton } from "@/components/admin/LogoutButton";
 import {
 	MenuNavIcon,
 	OrdersNavIcon,
-	PastFlavorsNavIcon,
 } from "@/components/icons/navIcons";
 import { isLocalMode } from "@/lib/localMode";
 
@@ -12,7 +11,6 @@ const links = [
 	{ href: "/admin/menu", label: "Menu", Icon: MenuNavIcon },
 	{ href: "/admin/inventory", label: "Inventory", Icon: MenuNavIcon },
 	{ href: "/admin/availability", label: "Pickup", Icon: OrdersNavIcon },
-	{ href: "/admin/menu?view=past", label: "Past Flavors", Icon: PastFlavorsNavIcon },
 ];
 
 function NavigationLinks() {
