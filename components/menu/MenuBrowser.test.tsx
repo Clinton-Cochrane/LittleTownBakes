@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadMenuCatalog } from "./MenuBrowser";
+import { loadMenuCatalog } from "@/lib/loadMenuCatalog";
 
 const validCatalog = {
 	categories: [{ id: "cookies", name: "Cookies", sortOrder: 10 }],
