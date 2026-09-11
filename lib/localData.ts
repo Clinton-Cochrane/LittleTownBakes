@@ -2,6 +2,7 @@ import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { MenuResponse } from "./menuCatalog";
 import type { AdminOrderRecord, FulfillmentStatus, OrderRecord, PaymentMethod } from "./orderTypes";
+import { isPickupWindowSelectable } from "./pickupWindows";
 
 export type LocalCategoryRow = {
 	id: string;
@@ -133,7 +134,9 @@ export async function getLocalMenu(): Promise<MenuResponse> {
 export async function getLocalPickupWindows(includeDisabled = false, now = new Date()) {
 	const data = await readData();
 	return data.pickupWindows
-		.filter((window) => includeDisabled || (window.enabled && new Date(window.start_at).getTime() > now.getTime()))
+		.filter((window) => includeDisabled || isPickupWindowSelectable({
+			startAt: window.start_at, endAt: window.end_at, enabled: window.enabled,
+		}, now))
 		.sort((a, b) => a.start_at.localeCompare(b.start_at));
 }
 
@@ -215,7 +218,9 @@ export function createLocalOrder(
 		const data = await readData();
 		const now = options.now ?? new Date();
 		const pickupWindow = data.pickupWindows.find((window) => window.id === input.pickupWindowId);
-		if (!pickupWindow || !pickupWindow.enabled || new Date(pickupWindow.start_at).getTime() <= now.getTime()) {
+		if (!pickupWindow || !isPickupWindowSelectable({
+			startAt: pickupWindow.start_at, endAt: pickupWindow.end_at, enabled: pickupWindow.enabled,
+		}, now)) {
 			throw new LocalOrderError("PICKUP_WINDOW_UNAVAILABLE");
 		}
 

@@ -40,6 +40,22 @@ describe("PATCH /api/admin/pickup-windows/[id]", () => {
 		});
 	});
 
+	it("resolves blank boundaries when editing", async () => {
+		mockRpc.mockResolvedValue({ data: { id: "replacement-id", enabled: true }, error: null });
+
+		const response = await PATCH(request({
+			date: "2099-09-18", startTime: "", endTime: "",
+		}), { params: Promise.resolve({ id }) });
+
+		expect(response.status).toBe(200);
+		expect(mockRpc).toHaveBeenCalledWith("replace_pickup_window", {
+			p_pickup_window_id: id,
+			p_start_at: "2099-09-18T07:00:00.000Z",
+			p_end_at: "2099-09-19T07:00:00.000Z",
+			p_enabled: null,
+		});
+	});
+
 	it("allows an admin to re-enable a future pickup window", async () => {
 		const existingSingle = vi.fn().mockResolvedValue({ data: {
 			start_at: "2099-09-19T01:42:00.000Z",

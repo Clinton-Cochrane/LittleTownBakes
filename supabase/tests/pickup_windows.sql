@@ -32,6 +32,15 @@ SELECT pg_temp.assert_pickup(
     'less than fifteen minutes before start is not selectable'
 );
 SELECT pg_temp.assert_pickup(
+    public.pickup_window_is_selectable(
+        '2026-09-18T13:00:00-07:00', '2026-09-18T18:00:00-07:00', true, '2026-09-18T14:00:00-07:00'
+    )
+    AND NOT public.pickup_window_is_selectable(
+        '2026-09-18T13:00:00-07:00', '2026-09-18T14:14:59-07:00', true, '2026-09-18T14:00:00-07:00'
+    ),
+    'an open window remains selectable only while at least fifteen minutes remain'
+);
+SELECT pg_temp.assert_pickup(
     NOT public.pickup_window_is_selectable(
         '2026-09-18T14:00:00-07:00', '2026-09-18T18:00:00-07:00', false, '2026-09-18T13:00:00-07:00'
     )
@@ -59,17 +68,28 @@ INSERT INTO public.pickup_windows (id, start_at, end_at, enabled) VALUES
     ('22222222-2222-4222-8222-222222222222', now() + interval '2 days 42 minutes', now() + interval '2 days 85 minutes', true),
     ('33333333-3333-4333-8333-333333333333', now() + interval '2 days', now() + interval '2 days 1 hour', false),
     ('44444444-4444-4444-8444-444444444444', now() - interval '2 hours', now() - interval '1 hour', true),
-    ('55555555-5555-4555-8555-555555555555', now() + interval '14 minutes', now() + interval '1 hour', true)
+    ('55555555-5555-4555-8555-555555555555', now() + interval '14 minutes', now() + interval '1 hour', true),
+    ('66666666-6666-4666-8666-666666666666', now() - interval '1 minute', now() + interval '2 hours', true),
+    ('77777777-7777-4777-8777-777777777777', now() - interval '1 hour', now() + interval '14 minutes', true)
 ON CONFLICT (id) DO UPDATE SET start_at = EXCLUDED.start_at, end_at = EXCLUDED.end_at, enabled = EXCLUDED.enabled;
 
 SELECT pg_temp.assert_pickup(
     EXISTS (SELECT 1 FROM public.list_available_pickup_windows(now()) WHERE id = '22222222-2222-4222-8222-222222222222')
+    AND EXISTS (SELECT 1 FROM public.list_available_pickup_windows(now()) WHERE id = '66666666-6666-4666-8666-666666666666')
     AND NOT EXISTS (SELECT 1 FROM public.list_available_pickup_windows(now()) WHERE id IN (
         '33333333-3333-4333-8333-333333333333',
         '44444444-4444-4444-8444-444444444444',
-        '55555555-5555-4555-8555-555555555555'
+        '55555555-5555-4555-8555-555555555555',
+        '77777777-7777-4777-8777-777777777777'
     )),
-    'customer availability includes only enabled future windows with fifteen minutes remaining'
+    'customer availability includes future and open windows only when the fifteen-minute rule is met'
+);
+SELECT pg_temp.assert_pickup(
+    EXISTS (
+        SELECT 1 FROM public.list_available_pickup_windows(clock_timestamp() - interval '2 minutes')
+        WHERE id = '77777777-7777-4777-8777-777777777777'
+    ),
+    'a nearly ended window can represent a choice that was valid when loaded'
 );
 
 UPDATE public.product_inventory SET quantity_on_hand = 5 WHERE product_id = 'cakepop_chocolate';
@@ -85,6 +105,13 @@ RETURNS JSONB LANGUAGE sql AS $$
         window_id
     );
 $$;
+
+SELECT pg_temp.place_pickup('pickup_open', '66666666-6666-4666-8666-666666666666');
+SELECT pg_temp.assert_pickup(
+    EXISTS (SELECT 1 FROM public.orders WHERE id = 'pickup_open')
+    AND (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate'),
+    'an open window returned to customers remains valid for authoritative order creation'
+);
 
 DO $$ BEGIN
     BEGIN
@@ -110,10 +137,16 @@ DO $$ BEGIN
         RAISE EXCEPTION 'unexpected success';
     EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'PICKUP_WINDOW_UNAVAILABLE%' THEN RAISE; END IF; END;
 END $$;
+DO $$ BEGIN
+    BEGIN
+        PERFORM pg_temp.place_pickup('pickup_stale_open', '77777777-7777-4777-8777-777777777777');
+        RAISE EXCEPTION 'unexpected success';
+    EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'PICKUP_WINDOW_UNAVAILABLE%' THEN RAISE; END IF; END;
+END $$;
 
 SELECT pg_temp.assert_pickup(
-    (SELECT quantity_on_hand = 5 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
-    AND NOT EXISTS (SELECT 1 FROM public.orders WHERE id IN ('pickup_missing', 'pickup_unknown', 'pickup_disabled', 'pickup_cutoff')),
+    (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
+    AND NOT EXISTS (SELECT 1 FROM public.orders WHERE id IN ('pickup_missing', 'pickup_unknown', 'pickup_disabled', 'pickup_cutoff', 'pickup_stale_open')),
     'invalid or stale pickup requests create no order and consume no inventory'
 );
 
@@ -142,7 +175,7 @@ DO $$ BEGIN
     EXCEPTION WHEN OTHERS THEN IF SQLERRM = 'unexpected success' OR SQLERRM NOT LIKE 'PICKUP_WINDOW_UNAVAILABLE%' THEN RAISE; END IF; END;
 END $$;
 SELECT pg_temp.assert_pickup(
-    (SELECT quantity_on_hand = 4 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
+    (SELECT quantity_on_hand = 3 FROM public.product_inventory WHERE product_id = 'cakepop_chocolate')
     AND NOT EXISTS (SELECT 1 FROM public.orders WHERE id = 'pickup_stale_edit'),
     'a checkout selection loaded before an edit is rejected without consuming inventory'
 );
