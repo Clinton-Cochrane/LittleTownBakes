@@ -7,6 +7,7 @@ import { isLocalMode } from "@/lib/localMode";
 
 type OrderRow = {
 	id: unknown;
+	public_order_number: unknown;
 	tracking_token: unknown;
 	created_at: unknown;
 	status: unknown;
@@ -27,6 +28,7 @@ function isMoney(value: unknown): value is number {
 
 function normalizeOrderRow(row: OrderRow): { order: AdminOrderRecord } | { reason: string } {
 	if (typeof row.id !== "string") return { reason: "invalid id" };
+	if (!Number.isSafeInteger(row.public_order_number) || (row.public_order_number as number) <= 0) return { reason: "invalid public order number" };
 	if (row.tracking_token !== null && typeof row.tracking_token !== "string") return { reason: "invalid tracking token" };
 	if (!isRecord(row.payload)) return { reason: "invalid payload" };
 
@@ -85,6 +87,7 @@ function normalizeOrderRow(row: OrderRow): { order: AdminOrderRecord } | { reaso
 
 	return { order: {
 		id: row.id,
+		publicOrderNumber: row.public_order_number as number,
 		trackingToken: row.tracking_token,
 		createdAt,
 		fulfillmentStatus: row.status,
@@ -121,7 +124,7 @@ export async function GET(req: NextRequest) {
 
 	let query = supabase
 		.from("orders")
-		.select("id, tracking_token, created_at, status, payload")
+		.select("id, public_order_number, tracking_token, created_at, status, payload")
 		.order("created_at", { ascending: false });
 
 	if (statusFilter) {

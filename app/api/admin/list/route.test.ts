@@ -16,6 +16,7 @@ import { GET } from "./route";
 
 const validRow = {
 	id: "ord_internal",
+	public_order_number: 1042,
 	tracking_token: "f3d4ec4e-f6c8-4dc1-b5f8-5d2fba9a8d4a",
 	created_at: "2026-09-08T20:00:00.000Z",
 	status: "IN_PROGRESS",
@@ -68,9 +69,10 @@ describe("GET /api/admin/list", () => {
 		const body = await response.json();
 
 		expect(response.status).toBe(200);
-		expect(mockSelect).toHaveBeenCalledWith("id, tracking_token, created_at, status, payload");
+		expect(mockSelect).toHaveBeenCalledWith("id, public_order_number, tracking_token, created_at, status, payload");
 		expect(body[0]).toMatchObject({
 			id: "ord_internal",
+			publicOrderNumber: 1042,
 			trackingToken: "f3d4ec4e-f6c8-4dc1-b5f8-5d2fba9a8d4a",
 			customer: { name: "Alice Baker", email: "alice@example.com", phone: "555-0100", notes: "Baker needs this" },
 			fulfillmentStatus: "IN_PROGRESS",

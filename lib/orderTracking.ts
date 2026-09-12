@@ -12,10 +12,12 @@ export function isValidTrackingToken(value: string): boolean {
 }
 
 export function toPublicOrderTracking(
+	publicOrderNumber: number,
 	fulfillmentStatus: FulfillmentStatus,
 	payload: Pick<OrderRecord, "payment" | "pickup" | "items" | "totals">,
 ): PublicOrderTracking {
 	return {
+		publicOrderNumber,
 		fulfillmentStatus,
 		payment: { method: payload.payment.method, status: payload.payment.status },
 		...(payload.pickup && { pickup: { startAt: payload.pickup.startAt, endAt: payload.pickup.endAt } }),

@@ -82,6 +82,24 @@ if [[ "$successes" -ne 1 || "$final_quantity" -ne 0 || "$race_orders" -ne 1 ]]; 
     exit 1
 fi
 
+# Sequence-backed public numbers must remain unique when orders commit concurrently.
+docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \
+    -c "UPDATE public.product_inventory SET quantity_on_hand = 2 WHERE product_id = 'cookie_chocolatechip'; DELETE FROM public.orders WHERE id IN ('number_race_1', 'number_race_2');" >/dev/null
+number_one="SELECT public.create_numbered_authoritative_order('number_race_1','track_number_race_1','{\"name\":\"Number Race One\",\"email\":\"one@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb,'11111111-1111-4111-8111-111111111111');"
+number_two="SELECT public.create_numbered_authoritative_order('number_race_2','track_number_race_2','{\"name\":\"Number Race Two\",\"email\":\"two@example.com\"}'::jsonb,'{\"method\":\"cash\"}'::jsonb,'[{\"productId\":\"cookie_chocolatechip\",\"quantity\":1}]'::jsonb,'11111111-1111-4111-8111-111111111111');"
+docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$number_one" >"$results_dir/number-one" 2>&1 &
+pid_number_one=$!
+docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" -c "$number_two" >"$results_dir/number-two" 2>&1 &
+pid_number_two=$!
+wait "$pid_number_one"
+wait "$pid_number_two"
+number_race_result="$(docker exec "$container" psql -At -U postgres -d "$database" -c "SELECT count(*) || ':' || count(DISTINCT public_order_number) FROM public.orders WHERE id IN ('number_race_1', 'number_race_2');")"
+if [[ "$number_race_result" != "2:2" ]]; then
+    cat "$results_dir/number-one" "$results_dir/number-two"
+    echo "public order number race assertion failed: orders:distinct=$number_race_result" >&2
+    exit 1
+fi
+
 # A customer reservation and admin +1 must both apply. Whichever locks first,
 # starting stock 5 becomes 5 after one decrement and one increment.
 docker exec "$container" psql -v ON_ERROR_STOP=1 -U postgres -d "$database" \

@@ -10,7 +10,7 @@ function request(body: unknown) { return new NextRequest("http://localhost/api/o
 describe("POST order status", () => {
 	beforeEach(() => {
 		vi.clearAllMocks(); mocks.auth.mockResolvedValue({ authorized: true }); mocks.notify.mockResolvedValue(undefined);
-		mocks.eqSelect.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { status: "RECEIVED", payload: {
+		mocks.eqSelect.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { public_order_number: 1042, status: "RECEIVED", payload: {
 			id: "ord", createdAt: "2026-09-09", fulfillmentStatus: "RECEIVED", payment: { method: "cash", status: "PENDING" }, customer: { name: "A", email: "a@b.com" }, items: [], totals: { subtotalCents: 0, totalCents: 0 },
 		} }, error: null }) });
 		mocks.maybeSingle.mockResolvedValue({ data: { id: "ord" }, error: null });
@@ -49,7 +49,7 @@ describe("POST order status", () => {
 		expect(mocks.from).not.toHaveBeenCalled();
 	});
 	it.each(["COMPLETED", "CANCELED"])("rejects payment changes after %s", async (status) => {
-		mocks.eqSelect.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { status, payload: {
+		mocks.eqSelect.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { public_order_number: 1042, status, payload: {
 			id: "ord", createdAt: "2026-09-09", fulfillmentStatus: status,
 			payment: { method: "cash", status: "PENDING" }, customer: { name: "A", email: "a@b.com" },
 			items: [], totals: { subtotalCents: 0, totalCents: 0 },

@@ -30,10 +30,14 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 	}
 
 	const supabase = getSupabaseAdmin();
-	const { data, error } = await supabase.from("orders").select("status, payload").eq("id", id).single();
+	const { data, error } = await supabase.from("orders").select("public_order_number, status, payload").eq("id", id).single();
 	if (error || !data) return new NextResponse("Not found", { status: 404 });
 
-	const previous = { ...(data.payload as OrderRecord), fulfillmentStatus: data.status as FulfillmentStatus };
+	const previous = {
+		...(data.payload as OrderRecord),
+		publicOrderNumber: data.public_order_number,
+		fulfillmentStatus: data.status as FulfillmentStatus,
+	};
 	if (paymentStatus) {
 		if (previous.fulfillmentStatus === "COMPLETED" || previous.fulfillmentStatus === "CANCELED") {
 			return NextResponse.json({ error: "Payment cannot be changed after fulfillment is closed" }, { status: 400 });

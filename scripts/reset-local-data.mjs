@@ -48,6 +48,7 @@ const data = {
 		{ id: pickupTwo, start_at: startTwo.toISOString(), end_at: endTwo.toISOString(), enabled: true, created_at: createdAt, updated_at: createdAt },
 	],
 	orders: [],
+	nextOrderNumber: 1001,
 	demandSignals: {},
 };
 

@@ -7,13 +7,14 @@ describe("public order tracking", () => {
 		expect(first).not.toBe(second); expect(isValidTrackingToken(first)).toBe(true); expect(isValidTrackingToken(second)).toBe(true);
 	});
 	it("returns authoritative snapshots without private payment or customer fields", () => {
-		const result = toPublicOrderTracking("IN_PROGRESS", {
+		const result = toPublicOrderTracking(1042, "IN_PROGRESS", {
 			payment: { method: "venmo", status: "PAID", venmoUser: "@private", note: "private" },
 			pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 			items: [{ productId: "cake", name: "Cake", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],
 			totals: { subtotalCents: 5000, totalCents: 5000 },
 		});
 		expect(result).toEqual({
+			publicOrderNumber: 1042,
 			fulfillmentStatus: "IN_PROGRESS", payment: { method: "venmo", status: "PAID" },
 			pickup: { startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 			items: [{ productId: "cake", name: "Cake", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],

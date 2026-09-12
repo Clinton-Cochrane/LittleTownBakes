@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
 		const id = `ord_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
 		const trackingToken = createTrackingToken();
-		const { data, error } = await getSupabaseAdmin().rpc("create_authoritative_order", {
+		const { data, error } = await getSupabaseAdmin().rpc("create_numbered_authoritative_order", {
 			p_order_id: id, p_tracking_token: trackingToken,
 			p_customer: validation.data.customer, p_payment: validation.data.payment, p_items: validation.data.items,
 			p_pickup_window_id: validation.data.pickupWindowId,
