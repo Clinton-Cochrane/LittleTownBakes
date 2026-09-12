@@ -20,10 +20,39 @@ export type AdminMenuCategory = {
 	sortOrder: number;
 };
 
+export type AdminMenuSection = {
+	category: AdminMenuCategory;
+	products: AdminMenuProduct[];
+};
+
+const alphabetical = new Intl.Collator("en", { sensitivity: "base" });
+
+function compareByName(
+	left: { id: string; name: string },
+	right: { id: string; name: string },
+) {
+	return alphabetical.compare(left.name, right.name)
+		|| (left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
+}
+
+/** Groups the Admin Menu independently of API order and inventory state. */
+export function buildAdminMenuSections(
+	categories: AdminMenuCategory[],
+	products: AdminMenuProduct[],
+): AdminMenuSection[] {
+	return [...categories]
+		.sort(compareByName)
+		.map((category) => ({
+			category,
+			products: products
+				.filter((product) => product.categoryId === category.id)
+				.sort(compareByName),
+		}))
+		.filter((section) => section.products.length > 0);
+}
+
 export function splitMenuProducts(products: AdminMenuProduct[]) {
-	const active = products
-		.filter((product) => !product.isArchived)
-		.sort((left, right) => Number(left.quantityOnHand === 0) - Number(right.quantityOnHand === 0));
+	const active = products.filter((product) => !product.isArchived);
 	const archived = products.filter((product) => product.isArchived);
 	return { active, archived };
 }

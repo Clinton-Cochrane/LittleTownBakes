@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminMenuProduct } from "@/lib/adminMenu";
 import { AdminMenu } from "./AdminMenu";
 
-function product(quantityOnHand: number): AdminMenuProduct {
+function product(quantityOnHand: number, overrides: Partial<AdminMenuProduct> = {}): AdminMenuProduct {
 	return {
 		id: "chocolate-cake",
 		categoryId: "cakes",
@@ -21,6 +21,7 @@ function product(quantityOnHand: number): AdminMenuProduct {
 		soldCount: 82,
 		demandCount: 31,
 		currentDemandCount: 4,
+		...overrides,
 	};
 }
 
@@ -81,6 +82,38 @@ describe("AdminMenu refill interaction", () => {
 		expect(adjustment).toBeDefined();
 		expect(JSON.parse(String(adjustment?.[1]?.body))).toEqual({ product_id: "chocolate-cake", delta: 12 });
 		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/inventory/adjust")).toHaveLength(1);
+	});
+
+	it("keeps alphabetical product order after refilling inventory", async () => {
+		const products = [
+			product(0),
+			product(8, { id: "apple-cake", name: "apple Cake" }),
+		];
+		const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			if (url === "/api/admin/products" && !init?.method) return jsonResponse(products);
+			if (url === "/api/admin/categories" && !init?.method) return jsonResponse([{ id: "cakes", name: "Cakes", sortOrder: 10 }]);
+			if (url === "/api/admin/inventory/adjust" && init?.method === "POST") {
+				return jsonResponse({ product_id: "chocolate-cake", quantity_on_hand: 12 });
+			}
+			throw new Error(`Unexpected fetch: ${init?.method ?? "GET"} ${url}`);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+		const user = userEvent.setup();
+		render(<AdminMenu />);
+
+		await screen.findByRole("heading", { name: "Chocolate Cake" });
+		const productNames = () => screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+		expect(productNames()).toEqual(["apple Cake", "Chocolate Cake"]);
+
+		const chocolateCard = screen.getByRole("heading", { name: "Chocolate Cake" }).closest("article");
+		expect(chocolateCard).not.toBeNull();
+		await user.click(within(chocolateCard as HTMLElement).getByRole("button", { name: "Refill" }));
+		await user.type(within(chocolateCard as HTMLElement).getByRole("textbox", { name: "Refill amount for Chocolate Cake" }), "12");
+		await user.click(within(chocolateCard as HTMLElement).getByRole("button", { name: "Confirm" }));
+
+		await within(chocolateCard as HTMLElement).findByText("12 available");
+		expect(productNames()).toEqual(["apple Cake", "Chocolate Cake"]);
 	});
 
 	it("continues to create products through the shared Add Product action", async () => {

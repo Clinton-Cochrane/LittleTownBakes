@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { handleAdminAuthFailure } from "@/lib/adminResponse";
 import {
+	buildAdminMenuSections,
 	ProductActionQueue,
 	splitMenuProducts,
 	type AdminMenuCategory,
@@ -190,6 +191,10 @@ export function AdminMenu() {
 	}
 
 	const views = splitMenuProducts(products);
+	const sections = {
+		active: buildAdminMenuSections(categories, views.active),
+		archived: buildAdminMenuSections(categories, views.archived),
+	};
 	if (loading) return <p className="py-10 text-center text-muted" role="status">Loading menu…</p>;
 	if (loadError) return <div className="py-8"><p className="rounded-lg bg-berry/10 px-4 py-3 text-berry" role="alert">{loadError}</p><button className="btn-primary mt-4" onClick={() => void loadMenu()}>Try Again</button></div>;
 
@@ -203,8 +208,17 @@ export function AdminMenu() {
 				<button type="button" role="tab" aria-selected={view === "current"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "current" ? "bg-cream text-cocoa shadow-soft" : "text-muted"}`} onClick={() => chooseView("current")}>Current Menu ({views.active.length})</button>
 				<button type="button" role="tab" aria-selected={view === "past"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "past" ? "bg-cream text-cocoa shadow-soft" : "text-muted"}`} onClick={() => chooseView("past")}>Past Flavors ({views.archived.length})</button>
 			</div>
-			<section className="mt-5 grid gap-4" aria-label={view === "current" ? "Current menu" : "Past Flavors"}>
-				{view === "current" ? views.active.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />) : views.archived.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
+			<section className="mt-5 grid gap-7" aria-label={view === "current" ? "Current menu" : "Past Flavors"}>
+				{(view === "current" ? sections.active : sections.archived).map((section) => (
+					<section key={section.category.id} aria-labelledby={`${view}-category-${section.category.id}`}>
+						<h2 id={`${view}-category-${section.category.id}`} className="mb-3 font-display text-xl font-semibold text-cocoa">{section.category.name}</h2>
+						<div className="grid gap-4">
+							{view === "current"
+								? section.products.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />)
+								: section.products.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
+						</div>
+					</section>
+				))}
 				{(view === "current" ? views.active : views.archived).length === 0 && <p className="card-warm p-5 text-muted">{view === "current" ? "No products are on the current menu yet." : "No Past Flavors yet."}</p>}
 			</section>
 			{editing && <ProductForm key={editing.id} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} onProductSaved={updateProduct} onComplete={() => setEditing(undefined)} />}

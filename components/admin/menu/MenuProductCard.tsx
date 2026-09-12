@@ -46,7 +46,7 @@ export function MenuProductCard({ product, pending = 0, error, onAdjust, onEdit,
 		<article className="card-warm p-4 sm:p-5">
 			<div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
 				<div className="min-w-0 flex-1">
-					<h2 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h2>
+					<h3 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h3>
 					<p className={`mt-1 text-sm font-semibold ${soldOut ? "text-berry" : "text-success"}`}>{soldOut ? "Sold Out · 0 available" : `${product.quantityOnHand} available`}</p>
 					<p className="mt-1 text-xs text-muted">{product.soldCount} sold · {product.demandCount} demand signals</p>
 					{pending > 0 && <p className="mt-1 text-xs text-muted" role="status">Updating {pending === 1 ? "change" : `${pending} changes`}…</p>}
@@ -73,7 +73,7 @@ export function MenuProductCard({ product, pending = 0, error, onAdjust, onEdit,
 export function PastFlavorCard({ product, error, onEdit, onRestore }: { product: AdminMenuProduct; error?: string; onEdit: () => void; onRestore: () => void }) {
 	return (
 		<article className="card-warm p-4 sm:p-5">
-			<h2 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h2>
+			<h3 className="break-words font-display text-lg font-semibold text-cocoa">{product.name}</h3>
 			{product.description && <p className="mt-1 text-sm text-muted">{product.description}</p>}
 			<p className="mt-2 text-xs text-muted">{product.soldCount} sold · {product.demandCount} demand signals</p>
 			{error && <p className="mt-3 rounded-lg bg-berry/10 px-3 py-2 text-sm text-berry" role="alert">{error}</p>}
