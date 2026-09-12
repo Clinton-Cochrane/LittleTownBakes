@@ -24,6 +24,18 @@ function render(image?: string) {
 	}));
 }
 
+function renderItem(item: Item) {
+	return renderToStaticMarkup(createElement(MenuCard, {
+		item,
+		available: true,
+		formatCurrency: () => "$4.00",
+		qty: 0,
+		maxPerOrder: 6,
+		onAdd: vi.fn(),
+		onSetQty: vi.fn(),
+	}));
+}
+
 describe("MenuCard product images", () => {
 	it("renders the existing placeholder when a product has no image", () => {
 		expect(render()).toContain('src="/img/placeholder.svg"');
@@ -50,5 +62,22 @@ describe("MenuCard availability", () => {
 	it("keeps in-stock products orderable", () => {
 		expect(render()).toContain("Add To Cart");
 		expect(render()).not.toContain("Bummed I missed this");
+	});
+});
+
+describe("MenuCard responsive containment", () => {
+	it("allows the grid item and long product copy to shrink without horizontal overflow", () => {
+		const html = renderItem({
+			id: "long-name",
+			name: "ExtraordinarilyLongUnbrokenProductName",
+			description: "ExtraordinarilyLongUnbrokenDescriptionThatMustStayInsideTheCard",
+			categoryId: "cakes",
+			basePrice: 4,
+			availability: { inStock: true },
+		});
+
+		expect(html).toMatch(/<article[^>]*class="[^"]*min-w-0/);
+		expect(html).toMatch(/<h3[^>]*class="[^"]*break-words/);
+		expect(html).toMatch(/<p[^>]*class="[^"]*break-words/);
 	});
 });

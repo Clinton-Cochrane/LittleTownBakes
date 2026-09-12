@@ -18,7 +18,7 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 	return (
 		<article
 			aria-label={item.name}
-			className="flex flex-col gap-5 rounded-card border border-crust bg-wheat p-5 shadow-soft transition-shadow duration-200 hover:shadow-card sm:flex-row sm:min-h-[140px] sm:gap-6 sm:p-6"
+			className="flex min-w-0 flex-col gap-5 rounded-card border border-crust bg-wheat p-5 shadow-soft transition-shadow duration-200 hover:shadow-card sm:flex-row sm:min-h-[140px] sm:gap-6 sm:p-6"
 		>
 			<div className="aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-cream shadow-soft sm:h-[120px] sm:w-[120px] sm:aspect-auto" aria-hidden>
 				{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,7 +41,7 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 				</header>
 
 				{item.description ? (
-					<p className="mt-3 line-clamp-2 text-sm text-cocoa/80">{item.description}</p>
+					<p className="mt-3 line-clamp-2 break-words text-sm text-cocoa/80">{item.description}</p>
 				) : null}
 
 				<div className="mt-auto flex flex-wrap items-center gap-4 gap-y-3 pt-4">
