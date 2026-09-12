@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+	buildAdminMenuSections,
 	ProductActionQueue,
 	parseRefillAmount,
 	splitMenuProducts,
@@ -26,14 +27,14 @@ function product(overrides: Partial<AdminMenuProduct>): AdminMenuProduct {
 }
 
 describe("admin menu product views", () => {
-	it("keeps active sold-out products visible after stocked products", () => {
+	it("keeps active sold-out products visible without sorting by inventory", () => {
 		const views = splitMenuProducts([
 			product({ id: "sold-out", name: "Sold Out", quantityOnHand: 0 }),
 			product({ id: "stocked", name: "Stocked", quantityOnHand: 3 }),
 		]);
 
-		expect(views.active.map((item) => item.id)).toEqual(["stocked", "sold-out"]);
-		expect(views.active[1].quantityOnHand).toBe(0);
+		expect(views.active.map((item) => item.id)).toEqual(["sold-out", "stocked"]);
+		expect(views.active[0].quantityOnHand).toBe(0);
 	});
 
 	it("separates archived products into Past Flavors", () => {
@@ -44,6 +45,41 @@ describe("admin menu product views", () => {
 
 		expect(views.active.map((item) => item.id)).toEqual(["active"]);
 		expect(views.archived.map((item) => item.id)).toEqual(["past"]);
+	});
+
+	it("groups categories and products in case-insensitive alphabetical order", () => {
+		const sections = buildAdminMenuSections(
+			[
+				{ id: "cupcakes", name: "cupcakes", sortOrder: 1 },
+				{ id: "empty", name: "Brownies", sortOrder: 2 },
+				{ id: "cookies", name: "Cookies", sortOrder: 30 },
+			],
+			[
+				product({ id: "snickerdoodle", categoryId: "cookies", name: "Snickerdoodle" }),
+				product({ id: "vanilla", categoryId: "cupcakes", name: "vanilla" }),
+				product({ id: "chocolate", categoryId: "cupcakes", name: "Chocolate" }),
+				product({ id: "oatmeal", categoryId: "cookies", name: "oatmeal Raisin" }),
+			],
+		);
+
+		expect(sections.map((section) => section.category.id)).toEqual(["cookies", "cupcakes"]);
+		expect(sections.map((section) => section.products.map((item) => item.id))).toEqual([
+			["oatmeal", "snickerdoodle"],
+			["chocolate", "vanilla"],
+		]);
+	});
+
+	it("does not change product order when inventory changes", () => {
+		const categories = [{ id: "cakes", name: "Cakes", sortOrder: 10 }];
+		const products = [
+			product({ id: "zebra", name: "Zebra Cake", quantityOnHand: 5 }),
+			product({ id: "apple", name: "apple Cake", quantityOnHand: 0 }),
+		];
+		const ids = (items: AdminMenuProduct[]) => buildAdminMenuSections(categories, items)[0].products.map((item) => item.id);
+
+		expect(ids(products)).toEqual(["apple", "zebra"]);
+		expect(ids(products.map((item) => item.id === "apple" ? { ...item, quantityOnHand: 12 } : item)))
+			.toEqual(["apple", "zebra"]);
 	});
 });
 
