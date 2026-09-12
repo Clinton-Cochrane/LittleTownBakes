@@ -16,6 +16,7 @@ function testData(): LocalData {
 		inventory: [{ product_id: "cake", quantity_on_hand: 3 }],
 		pickupWindows: [{ id: pickupWindowId, start_at: "2099-01-02T18:00:00.000Z", end_at: "2099-01-02T19:00:00.000Z", enabled: true, created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" }],
 		orders: [],
+		nextOrderNumber: 1001,
 	};
 }
 
@@ -47,12 +48,30 @@ describe("local JSON data", () => {
 
 		expect(result.order).toMatchObject({
 			id: "ord_local_test",
+			publicOrderNumber: 1001,
 			items: [{ productId: "cake", name: "Test Cake", unitPriceCents: 2500, quantity: 2, lineTotalCents: 5000 }],
 			totals: { subtotalCents: 5000, totalCents: 5000 },
 		});
 		expect(await getLocalOrderByTrackingToken(trackingToken)).toMatchObject({ id: "ord_local_test" });
 		const saved = JSON.parse(await readFile(dataFile, "utf8")) as LocalData;
 		expect(saved.inventory[0].quantity_on_hand).toBe(1);
+		expect(saved.nextOrderNumber).toBe(1002);
+	});
+
+	it("assigns distinct persistent public numbers while preserving internal IDs", async () => {
+		const input = {
+			customer: { name: "Local Customer", email: "local@example.test" },
+			payment: { method: "cash" as const },
+			pickupWindowId,
+			items: [{ productId: "cake", quantity: 1 }],
+		};
+		const first = await createLocalOrder(input, { id: "ord_internal_one", now: new Date("2026-01-01T00:00:00.000Z") });
+		const second = await createLocalOrder(input, { id: "ord_internal_two", now: new Date("2026-01-01T00:01:00.000Z") });
+
+		expect(first.order).toMatchObject({ id: "ord_internal_one", publicOrderNumber: 1001 });
+		expect(second.order).toMatchObject({ id: "ord_internal_two", publicOrderNumber: 1002 });
+		const reloaded = await getLocalOrderByTrackingToken(first.trackingToken);
+		expect(reloaded?.payload).toMatchObject({ id: "ord_internal_one", publicOrderNumber: 1001 });
 	});
 
 	it("rejects orders that exceed local inventory without changing the file", async () => {

@@ -20,19 +20,19 @@ export async function GET(
 	if (isLocalMode()) {
 		const row = await getLocalOrderByTrackingToken(token);
 		if (!row) return notFound();
-		return NextResponse.json(toPublicOrderTracking(row.status, row.payload), { headers: NO_STORE_HEADERS });
+		return NextResponse.json(toPublicOrderTracking(row.payload.publicOrderNumber, row.status, row.payload), { headers: NO_STORE_HEADERS });
 	}
 
 	const supabase = getSupabaseAdmin();
 	const { data, error } = await supabase
 		.from("orders")
-		.select("status, payload")
+		.select("public_order_number, status, payload")
 		.eq("tracking_token", token)
 		.single();
 
 	if (error || !data) return notFound();
 
 	const payload = data.payload as Pick<OrderRecord, "payment" | "pickup" | "items" | "totals">;
-	const order = toPublicOrderTracking(data.status as FulfillmentStatus, payload);
+	const order = toPublicOrderTracking(data.public_order_number, data.status as FulfillmentStatus, payload);
 	return NextResponse.json(order, { headers: NO_STORE_HEADERS });
 }

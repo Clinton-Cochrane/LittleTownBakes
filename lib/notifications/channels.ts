@@ -13,15 +13,15 @@ function escapeHtml(value: string): string {
 
 function eventTitle(notification: OrderNotification): string {
 	return notification.type === "new-order"
-		? `New order ${notification.order.id}`
-		: `Order ${notification.order.id} is ${notification.order.fulfillmentStatus.replaceAll("_", " ").toLowerCase()}`;
+		? `New order #${notification.order.publicOrderNumber}`
+		: `Order #${notification.order.publicOrderNumber} is ${notification.order.fulfillmentStatus.replaceAll("_", " ").toLowerCase()}`;
 }
 
 function renderEmail(notification: OrderNotification, from: string, to: string): EmailMessage {
 	const { order } = notification;
 	const itemLines = order.items.map((item) => `${item.name} x ${item.quantity} — ${currency(item.lineTotalCents)}`);
 	const detailLines = [
-		`Order: ${order.id}`,
+		`Order #${order.publicOrderNumber}`,
 		`Created: ${order.createdAt}`,
 		`Customer: ${order.customer.name}`,
 		`Email: ${order.customer.email}`,

@@ -8,7 +8,7 @@ const token = "f3d4ec4e-f6c8-4dc1-b5f8-5d2fba9a8d4a";
 describe("GET /api/orders/track/[token]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockEq.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { status: "RECEIVED", payload: {
+		mockEq.mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { public_order_number: 1042, status: "RECEIVED", payload: {
 			payment: { method: "cash", status: "PENDING" },
 			pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
 			items: [{ productId: "cake", name: "Cake", unitPriceCents: 2500, quantity: 1, lineTotalCents: 2500 }],
@@ -21,6 +21,7 @@ describe("GET /api/orders/track/[token]", () => {
 		const body = await response.json();
 		expect(response.status).toBe(200);
 		expect(body).toMatchObject({
+			publicOrderNumber: 1042,
 			fulfillmentStatus: "RECEIVED",
 			payment: { method: "cash", status: "PENDING" },
 			pickup: { startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },

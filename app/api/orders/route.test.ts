@@ -8,7 +8,7 @@ vi.mock("@/lib/rateLimit", () => ({ checkRateLimit: () => null }));
 import { POST } from "./route";
 
 const authoritativeOrder = {
-	id: "ord_server", createdAt: "2026-09-09T20:00:00.000Z", fulfillmentStatus: "RECEIVED",
+	id: "ord_server", publicOrderNumber: 1042, createdAt: "2026-09-09T20:00:00.000Z", fulfillmentStatus: "RECEIVED",
 	payment: { method: "cash", status: "PENDING" },
 	customer: { name: "Alice Baker", email: "alice@example.com" },
 	pickup: { windowId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
@@ -40,13 +40,15 @@ describe("POST /api/orders", () => {
 		const body = await response.json();
 		const args = mockRpc.mock.calls[0][1];
 		expect(response.status).toBe(201);
-		expect(mockRpc).toHaveBeenCalledWith("create_authoritative_order", expect.any(Object));
+		expect(mockRpc).toHaveBeenCalledWith("create_numbered_authoritative_order", expect.any(Object));
 		expect(args.p_customer).toEqual(trustedRequest.customer);
+		expect(args.p_order_id).toMatch(/^ord_/);
 		expect(args.p_payment).toEqual({ method: "cash" });
 		expect(args.p_pickup_window_id).toBe(trustedRequest.pickupWindowId);
 		expect(args.p_items).toEqual([{ productId: "cake", quantity: 2 }]);
 		expect(JSON.stringify(args)).not.toContain("Fake");
 		expect(body).toMatchObject({ trackingToken: expect.any(String), order: authoritativeOrder });
+		expect(body.order).toMatchObject({ id: "ord_server", publicOrderNumber: 1042 });
 		expect(mockNotify).toHaveBeenCalledWith(authoritativeOrder);
 	});
 

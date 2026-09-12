@@ -101,7 +101,7 @@ function OrderCard({
 		<div className="card-warm overflow-hidden p-4 sm:p-6">
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<div>
-					<strong className="text-cocoa">#{o.id}</strong>
+					<strong className="text-cocoa">Order #{o.publicOrderNumber}</strong>
 					<span className="mx-2 text-muted">—</span>
 					<span className="text-cocoa">{o.customer.name}</span>
 				</div>

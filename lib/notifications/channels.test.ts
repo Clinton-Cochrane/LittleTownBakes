@@ -7,7 +7,7 @@ const notification: OrderNotification = {
 	type: "new-order",
 	adminUrl: "https://bakery.example/admin/orders",
 	order: {
-		id: "ord_123", createdAt: "2026-09-10T18:00:00.000Z", fulfillmentStatus: "RECEIVED",
+		id: "ord_123", publicOrderNumber: 1042, createdAt: "2026-09-10T18:00:00.000Z", fulfillmentStatus: "RECEIVED",
 		customer: { name: "Alice <Baker>", email: "alice@example.com", phone: "555-0100", notes: "Pickup after 4 & ring bell" },
 		payment: { method: "cash", status: "PENDING" },
 		pickup: { windowId: "window-1", startAt: "2026-09-19T01:42:00.000Z", endAt: "2026-09-19T02:25:00.000Z" },
@@ -26,11 +26,13 @@ describe("notification channels", () => {
 		expect(send).toHaveBeenCalledWith(expect.objectContaining({
 			from: "Little Town Bakes <orders@bakery.example>",
 			to: "baker@example.com",
-			subject: expect.stringContaining("ord_123"),
+			subject: "New order #1042",
 			html: expect.stringContaining("Alice &lt;Baker&gt;"),
 			idempotencyKey: "new-order:ord_123:email",
 		}));
 		const message = send.mock.calls[0][0];
+		expect(message.text).toContain("Order #1042");
+		expect(message.text).not.toContain("ord_123");
 		expect(message.text).toContain("Alice <Baker>");
 		expect(message.text).toContain("Pickup after 4 & ring bell");
 		expect(message.text).toContain("Chocolate & Vanilla x 2 — $50.00");

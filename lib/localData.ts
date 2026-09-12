@@ -50,6 +50,7 @@ export type LocalData = {
 	inventory: LocalInventoryRow[];
 	pickupWindows: LocalPickupWindowRow[];
 	orders: LocalOrderRow[];
+	nextOrderNumber?: number;
 	demandSignals?: Record<string, number>;
 };
 
@@ -246,8 +247,10 @@ export function createLocalOrder(
 		const subtotalCents = orderItems.reduce((total, item) => total + item.lineTotalCents, 0);
 		const id = options.id ?? `ord_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
 		const trackingToken = options.trackingToken ?? crypto.randomUUID();
+		const publicOrderNumber = data.nextOrderNumber ?? 1001;
 		const order: OrderRecord = {
 			id,
+			publicOrderNumber,
 			createdAt: now.toISOString(),
 			fulfillmentStatus: "RECEIVED",
 			payment: { ...input.payment, status: "PENDING" },
@@ -257,6 +260,7 @@ export function createLocalOrder(
 			totals: { subtotalCents, totalCents: subtotalCents },
 		};
 		data.orders.push({ id, tracking_token: trackingToken, created_at: order.createdAt, status: "RECEIVED", payload: order });
+		data.nextOrderNumber = publicOrderNumber + 1;
 		await writeData(data);
 		return { trackingToken, order };
 	});

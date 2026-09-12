@@ -4,6 +4,7 @@ import { NotificationService } from "./service";
 
 const order = {
 	id: "ord_authoritative",
+	publicOrderNumber: 1042,
 	createdAt: "2026-09-10T18:00:00.000Z",
 	fulfillmentStatus: "RECEIVED" as const,
 	payment: { method: "venmo" as const, status: "PAID" as const, venmoUser: "@alice" },

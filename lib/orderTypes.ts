@@ -18,6 +18,7 @@ export type PickupSnapshot = {
 
 export type OrderRecord = {
 	id: string;
+	publicOrderNumber: number;
 	createdAt: string;
 	fulfillmentStatus: FulfillmentStatus;
 	payment: { method: PaymentMethod; status: PaymentStatus; venmoUser?: string; note?: string };
@@ -27,7 +28,7 @@ export type OrderRecord = {
 	totals: { subtotalCents: number; totalCents: number };
 };
 
-export type PublicOrderTracking = Pick<OrderRecord, "fulfillmentStatus" | "payment" | "items" | "totals"> & {
+export type PublicOrderTracking = Pick<OrderRecord, "publicOrderNumber" | "fulfillmentStatus" | "payment" | "items" | "totals"> & {
 	pickup?: Pick<PickupSnapshot, "startAt" | "endAt">;
 };
 export type AdminOrderRecord = OrderRecord & { trackingToken: string | null };
