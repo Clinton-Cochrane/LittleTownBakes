@@ -40,6 +40,9 @@ function inventoryFetch({
 		if (url === "/api/menu" && !init?.method) {
 			return jsonResponse({ items: activeProducts, archivedItems: archivedProducts });
 		}
+		if (url === "/api/admin/categories" && !init?.method) {
+			return jsonResponse([{ id: "cookies", name: "Cookies", sortOrder: 10 }]);
+		}
 		if (url === "/api/admin/inventory" && init?.method === "POST") {
 			const body = JSON.parse(String(init.body)) as { product_id: string; quantity_on_hand: number };
 			if (exactGate && body.product_id === "cookie") await exactGate;
@@ -98,6 +101,37 @@ describe("Admin Inventory current-stock editor", () => {
 		expect(screen.getByRole("button", { name: "Download JSON" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Product template" })).toBeTruthy();
 		expect(screen.getByLabelText("Upload inventory file")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Add Product" })).toBeTruthy();
+	});
+
+	it("creates a product through the shared form and shows it immediately with zero stock", async () => {
+		const { fetchMock } = inventoryFetch();
+		const baseImplementation = fetchMock.getMockImplementation()!;
+		fetchMock.mockImplementation(async (input: string | URL | Request, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			if (url === "/api/admin/products" && init?.method === "POST") {
+				const values = JSON.parse(String(init.body));
+				return jsonResponse({ id: "oatmeal", ...values, isArchived: false, sortOrder: 40, quantityOnHand: 0 });
+			}
+			return baseImplementation(input, init);
+		});
+		const user = await renderInventory(fetchMock);
+
+		await user.click(screen.getByRole("button", { name: "Add Product" }));
+		await user.type(screen.getByLabelText("Name"), "Oatmeal Cookie");
+		await user.type(screen.getByLabelText("Price"), "4.25");
+		await user.click(screen.getByRole("button", { name: "Save Product" }));
+
+		await screen.findByText("Oatmeal Cookie");
+		expect(quantity("Oatmeal Cookie").value).toBe("0");
+		const creation = fetchMock.mock.calls.find(([url, init]) => url === "/api/admin/products" && init?.method === "POST");
+		expect(JSON.parse(String(creation?.[1]?.body))).toMatchObject({
+			name: "Oatmeal Cookie",
+			priceCents: 425,
+			categoryId: "cookies",
+			maxPerOrder: 12,
+			image: null,
+		});
 	});
 
 	it("increments and decrements with atomic delta requests while keeping success quiet", async () => {

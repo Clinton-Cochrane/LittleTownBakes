@@ -35,6 +35,10 @@ function mockMenuRequests(quantityOnHand: number) {
 	return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
 		const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 		if (url === "/api/admin/products" && !init?.method) return jsonResponse([product(quantityOnHand)]);
+		if (url === "/api/admin/products" && init?.method === "POST") {
+			const values = JSON.parse(String(init.body));
+			return jsonResponse({ ...product(0), id: "vanilla-cake", ...values });
+		}
 		if (url === "/api/admin/categories" && !init?.method) return jsonResponse([{ id: "cakes", name: "Cakes", sortOrder: 10 }]);
 		if (url === "/api/admin/inventory/adjust" && init?.method === "POST") {
 			return jsonResponse({ product_id: "chocolate-cake", quantity_on_hand: quantityOnHand + 12 });
@@ -77,6 +81,22 @@ describe("AdminMenu refill interaction", () => {
 		expect(adjustment).toBeDefined();
 		expect(JSON.parse(String(adjustment?.[1]?.body))).toEqual({ product_id: "chocolate-cake", delta: 12 });
 		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/inventory/adjust")).toHaveLength(1);
+	});
+
+	it("continues to create products through the shared Add Product action", async () => {
+		const fetchMock = mockMenuRequests(5);
+		vi.stubGlobal("fetch", fetchMock);
+		const user = userEvent.setup();
+		render(<AdminMenu />);
+
+		await screen.findByRole("heading", { name: "Chocolate Cake" });
+		await user.click(screen.getByRole("button", { name: "Add Product" }));
+		await user.type(screen.getByLabelText("Name"), "Vanilla Cake");
+		await user.type(screen.getByLabelText("Price"), "4.50");
+		await user.click(screen.getByRole("button", { name: "Save Product" }));
+
+		await screen.findByRole("heading", { name: "Vanilla Cake" });
+		expect(fetchMock.mock.calls.some(([url, init]) => url === "/api/admin/products" && init?.method === "POST")).toBe(true);
 	});
 
 	it("submits the value present in the form when input state has not committed yet", async () => {

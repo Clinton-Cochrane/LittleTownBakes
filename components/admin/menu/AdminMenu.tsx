@@ -9,7 +9,8 @@ import {
 	type AdminMenuProduct,
 } from "@/lib/adminMenu";
 import { MenuProductCard, PastFlavorCard } from "./MenuProductCard";
-import { ProductForm } from "./ProductForm";
+import { AddProductAction } from "./AddProductAction";
+import { ProductForm, type ProductValues } from "./ProductForm";
 
 type View = "current" | "past";
 
@@ -108,24 +109,37 @@ export function AdminMenu() {
 		});
 	}
 
-	async function saveProduct(values: { name: string; description: string; priceCents: number; categoryId: string; maxPerOrder: number }, product: AdminMenuProduct | null) {
-		const response = await fetch(product ? `/api/admin/products/${encodeURIComponent(product.id)}` : "/api/admin/products", {
-			method: product ? "PATCH" : "POST",
+	async function saveProduct(values: ProductValues, product: AdminMenuProduct | null) {
+		if (!product) throw new Error("Choose a product to edit.");
+		const response = await fetch(`/api/admin/products/${encodeURIComponent(product.id)}`, {
+			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(product ? values : { ...values, image: null }),
+			body: JSON.stringify(values),
 		});
 		if (!response.ok) throw new Error(await responseError(response, "Product could not be saved."));
 		const saved = await response.json() as AdminMenuProduct;
-		setProducts((current) => current.some((candidate) => candidate.id === saved.id)
-			? current.map((candidate) => candidate.id === saved.id ? {
+		setProducts((current) => current.map((candidate) => candidate.id === saved.id ? {
 				...saved,
 				soldCount: saved.soldCount ?? candidate.soldCount,
 				demandCount: saved.demandCount ?? candidate.demandCount,
 				currentDemandCount: saved.currentDemandCount ?? candidate.currentDemandCount,
-			} : candidate)
-			: [...current, { ...saved, soldCount: saved.soldCount ?? 0, demandCount: saved.demandCount ?? 0, currentDemandCount: saved.currentDemandCount ?? 0 }]);
-		if (!product) chooseView("current");
+			} : candidate));
 		return saved;
+	}
+
+	function addCreatedProduct(saved: AdminMenuProduct) {
+		setProducts((current) => {
+			const created = {
+				...saved,
+				soldCount: saved.soldCount ?? 0,
+				demandCount: saved.demandCount ?? 0,
+				currentDemandCount: saved.currentDemandCount ?? 0,
+			};
+			return current.some((product) => product.id === saved.id)
+				? current.map((product) => product.id === saved.id ? created : product)
+				: [...current, created];
+		});
+		chooseView("current");
 	}
 
 	async function archive(product: AdminMenuProduct) {
@@ -183,7 +197,7 @@ export function AdminMenu() {
 		<>
 			<div className="flex items-start justify-between gap-3">
 				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Menu</h1><p className="mt-1 text-sm text-muted">Manage what is available today.</p></div>
-				<button type="button" className="btn-primary shrink-0" onClick={() => setEditing(null)} disabled={categories.length === 0}>Add Product</button>
+				<AddProductAction categories={categories} onCreated={addCreatedProduct} />
 			</div>
 			<div className="mt-6 grid grid-cols-2 rounded-button border border-crust bg-wheat p-1" role="tablist" aria-label="Menu views">
 				<button type="button" role="tab" aria-selected={view === "current"} className={`min-h-11 rounded-lg px-3 font-semibold ${view === "current" ? "bg-cream text-cocoa shadow-soft" : "text-muted"}`} onClick={() => chooseView("current")}>Current Menu ({views.active.length})</button>
@@ -193,7 +207,7 @@ export function AdminMenu() {
 				{view === "current" ? views.active.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />) : views.archived.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
 				{(view === "current" ? views.active : views.archived).length === 0 && <p className="card-warm p-5 text-muted">{view === "current" ? "No products are on the current menu yet." : "No Past Flavors yet."}</p>}
 			</section>
-			{editing !== undefined && <ProductForm key={editing?.id ?? "new"} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} onProductSaved={updateProduct} onComplete={() => setEditing(undefined)} />}
+			{editing && <ProductForm key={editing.id} product={editing} categories={categories} onCancel={() => setEditing(undefined)} onSave={saveProduct} onProductSaved={updateProduct} onComplete={() => setEditing(undefined)} />}
 		</>
 	);
 }

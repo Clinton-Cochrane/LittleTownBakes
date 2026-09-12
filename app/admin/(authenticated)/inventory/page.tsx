@@ -5,6 +5,8 @@ import { handleAdminAuthFailure } from "@/lib/adminResponse";
 import { ProductActionQueue } from "@/lib/adminMenu";
 import type { ProductInventory } from "@/lib/inventory";
 import { stringifyInventoryTemplateCsv } from "@/lib/inventoryBulk";
+import { AddProductAction } from "@/components/admin/menu/AddProductAction";
+import type { AdminMenuCategory, AdminMenuProduct } from "@/lib/adminMenu";
 
 type MenuItem = { id: string; name: string };
 type InventoryMutation = { product_id: string; quantity_on_hand: number };
@@ -86,6 +88,7 @@ export default function AdminInventoryPage() {
 	const inventoryRef = useRef<ProductInventory[]>([]);
 	const [currentProducts, setCurrentProducts] = useState<MenuItem[]>([]);
 	const [templateProducts, setTemplateProducts] = useState<MenuItem[]>([]);
+	const [categories, setCategories] = useState<AdminMenuCategory[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [pending, setPending] = useState<Record<string, number>>({});
 	const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
@@ -127,8 +130,8 @@ export default function AdminInventoryPage() {
 	}
 
 	useEffect(() => {
-		Promise.all([fetch("/api/admin/inventory"), fetch("/api/menu")])
-			.then(async ([inventoryResponse, menuResponse]) => {
+		Promise.all([fetch("/api/admin/inventory"), fetch("/api/menu"), fetch("/api/admin/categories")])
+			.then(async ([inventoryResponse, menuResponse, categoriesResponse]) => {
 				if (!inventoryResponse.ok) {
 					setError(handleAdminAuthFailure(inventoryResponse) ?? `Failed to load inventory (${inventoryResponse.status}).`);
 					return;
@@ -137,12 +140,17 @@ export default function AdminInventoryPage() {
 					setError(`Failed to load current products (${menuResponse.status}).`);
 					return;
 				}
+				if (!categoriesResponse.ok) {
+					setError(handleAdminAuthFailure(categoriesResponse) ?? `Failed to load product categories (${categoriesResponse.status}).`);
+					return;
+				}
 				replaceInventory(await inventoryResponse.json());
 				const menu = await menuResponse.json();
 				const active = (menu.items ?? []) as MenuItem[];
 				const archived = (menu.archivedItems ?? []) as MenuItem[];
 				setCurrentProducts(active);
 				setTemplateProducts([...active, ...archived]);
+				setCategories(await categoriesResponse.json());
 			})
 			.catch(() => setError("Inventory could not be loaded. Please try again."))
 			.finally(() => setLoading(false));
@@ -228,16 +236,28 @@ export default function AdminInventoryPage() {
 		return mutateProduct(productId, "/api/admin/inventory/adjust", { product_id: productId, delta }, "This stock change was not saved. The saved quantity has been restored.");
 	}
 
+	function addCreatedProduct(product: AdminMenuProduct) {
+		const item = { id: product.id, name: product.name };
+		setCurrentProducts((current) => current.some((candidate) => candidate.id === product.id)
+			? current.map((candidate) => candidate.id === product.id ? item : candidate)
+			: [...current, item]);
+		setTemplateProducts((current) => current.some((candidate) => candidate.id === product.id)
+			? current.map((candidate) => candidate.id === product.id ? item : candidate)
+			: [...current, item]);
+	}
+
 	if (loading) return <main className="mx-auto max-w-5xl px-4 py-6"><p className="text-muted">Loading...</p></main>;
 
 	return (
 		<main className="mx-auto max-w-5xl px-4 py-6">
-			<h1 className="mb-2 font-display text-2xl font-semibold text-cocoa">Inventory</h1>
-			<p className="mb-6 text-sm text-muted">Adjust current stock quickly or type an exact quantity.</p>
-			{error && <p className="mb-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">{error}</p>}
-			{message && <p className="mb-4 text-sm text-success" role="status">{message}</p>}
+			<div className="flex items-start justify-between gap-3">
+				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Inventory</h1><p className="mt-1 text-sm text-muted">Adjust current stock quickly or type an exact quantity.</p></div>
+				<AddProductAction categories={categories} onCreated={addCreatedProduct} />
+			</div>
+			{error && <p className="mb-4 mt-4 rounded-lg bg-berry/10 px-4 py-2 text-berry" role="alert">{error}</p>}
+			{message && <p className="mb-4 mt-4 text-sm text-success" role="status">{message}</p>}
 
-			<section className="mb-8" aria-labelledby="current-stock-heading">
+			<section className="mb-8 mt-6" aria-labelledby="current-stock-heading">
 				<h2 id="current-stock-heading" className="mb-3 font-display text-lg font-semibold text-cocoa">Current stock</h2>
 				<div className="grid gap-3">
 					{currentProducts.map((product) => <StockRow key={product.id} product={product} quantity={inventory.find((row) => row.product_id === product.id)?.quantity_on_hand ?? 0} pending={pending[product.id] ?? 0} error={rowErrors[product.id]} onSet={(quantity) => setQuantity(product.id, quantity)} onAdjust={(delta) => adjustQuantity(product.id, delta)} onInvalid={(message) => setRowErrors((current) => ({ ...current, [product.id]: message }))} onClearError={() => setRowErrors((current) => ({ ...current, [product.id]: "" }))} />)}
