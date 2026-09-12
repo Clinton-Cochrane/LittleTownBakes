@@ -5,7 +5,7 @@ import type { AdminMenuCategory, AdminMenuProduct } from "@/lib/adminMenu";
 import { uploadProductImage, validateSelectedProductImage } from "@/lib/productImageClient";
 import { saveProductWithOptionalImage } from "@/lib/productImageWorkflow";
 
-type ProductValues = {
+export type ProductValues = {
 	name: string;
 	description: string;
 	priceCents: number;
