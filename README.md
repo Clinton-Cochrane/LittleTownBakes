@@ -1,120 +1,162 @@
 # Little Town Bakes
 
-Little Town Bakes – cottage bakery ordering app with menu, cart, checkout, and admin.
+A cottage bakery ordering app built with Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, and Supabase. Customers browse the menu, build a cart, choose a pickup window, and track their orders. Bakery admins manage products, photos, stock, pickup availability, and order fulfillment.
 
-## Setup
+Checkout supports Venmo instructions and cash at pickup; admins record payment status. PostgreSQL validates prices and reserves inventory atomically, and public tracking links use tokens separate from internal order IDs.
 
-See [DEV_TODO.md](DEV_TODO.md) for a development checklist (Supabase project, migrations, etc.).
+## Quick start
 
-For normal local UI and workflow development, no Supabase setup is required:
+Use Node.js **20.19+ on the 20.x line**, **22.13+ on the 22.x line**, or **24+**, with npm. These versions satisfy the development dependencies; CI uses Node.js 20. The local development script uses POSIX environment-variable syntax, so use a compatible shell (or WSL on Windows).
 
 ```bash
-npm install
+git clone https://github.com/Clinton-Cochrane/LittleTownBakes.git
+cd LittleTownBakes
+npm ci
 npm run dev:local
 ```
 
-Open `http://localhost:3000`. Local data is generated at `.local/data.json`, which is ignored by Git. The generated catalog includes available, sold-out, and archived products plus future pickup windows. Checkout writes orders to this file so order tracking and the admin order list reflect them immediately.
+Open [localhost:3000](http://localhost:3000). This mode needs no Supabase project or environment file. It generates an ignored `.local/data.json` with available, sold-out, and archived products plus future pickup windows. Checkout persists orders and inventory changes there, so tracking and the admin order list reflect local orders.
 
-Local admin credentials are displayed on `/admin/login`:
+Sign in at `/admin/login` with these development-only credentials:
 
 ```text
 Email: root@local.test
 Password: toor
 ```
 
-Admin screens are viewable in local mode, but admin mutations are intentionally read-only. Reset the generated data at any time with `npm run local:reset`.
+Local admin screens can be viewed, but admin mutations return `LOCAL_READ_ONLY`. Use Supabase mode below to develop admin writes. To discard local orders and regenerate stock and future pickup windows, run:
 
-For production-like Supabase development instead:
+```bash
+npm run local:reset
+```
 
-1. Copy `.env.example` to `.env.local` and fill in the Supabase values.
-2. Run Supabase migrations in `supabase/migrations/` via Supabase SQL Editor or CLI.
-3. Run `npm run dev`.
+The JSON adapter and local admin identity are disabled when `NODE_ENV=production`.
 
-## Environment Variables
+## Repository map
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key used by cookie-backed Auth clients |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
-| `LOCAL_DATA_SOURCE` | Local only | `npm run dev:local` sets this to `json`; it is ignored in production |
-| `MENU_DATA_SOURCE` | No | Set to `fixture` only for deterministic local development/test menu data; production always uses Supabase |
-| `NEXT_PUBLIC_VENMO_HANDLE` | No | Venmo handle for checkout (default: @LittleTownBakes) |
-| `NOTIFICATIONS_ENABLED` | No | Set to `true` to enable configured server-side notification channels (default: disabled) |
-| `RESEND_API_KEY` | For email | Resend API key (server-only) |
-| `NOTIFICATION_EMAIL_FROM` | For email | Sender on a Resend-verified domain, e.g. `Little Town Bakes <orders@updates.example.com>` |
-| `BAKER_NOTIFICATION_EMAIL` | For email | Baker inbox that receives operational order notifications (server-only) |
-| `ADMIN_ORDERS_URL` | No | Absolute admin orders URL included in notifications |
+| Path | Purpose |
+| --- | --- |
+| `app/` | App Router pages, layouts, and API route handlers |
+| `app/admin/` | Admin login and protected bakery management pages |
+| `app/api/` | Menu, checkout, tracking, demand signals, admin operations, and health checks |
+| `components/` | Shared UI, cart, checkout, and admin components |
+| `lib/` | Catalog, inventory, orders, pickup windows, authorization, and local data logic |
+| `lib/supabase/` | Cookie-backed browser/server Auth clients and session middleware |
+| `lib/supabaseAdmin.ts` | Server-side privileged database client |
+| `lib/notifications/` | Notification orchestration, channels, and Resend provider |
+| `supabase/migrations/` | Ordered database schema, functions, policies, and seed migrations |
+| `supabase/tests/` | SQL assertions exercised by the database test script |
+| `fixtures/menu.json` | Deterministic menu-only fixture |
+| `scripts/` | Local data reset, database tests, and production smoke checks |
+| `public/` | Static assets and About page content |
+| `.github/workflows/ci.yml` | Pull request and main-branch checks |
 
-## Notifications
+Vitest tests live alongside the modules and pages they cover as `*.test.ts` and `*.test.tsx`.
 
-Order routes persist changes before awaiting notification delivery. `NotificationService` fans each event out to the configured channels with independent settled results, so one provider failure cannot stop another channel or change a successful order response. Environment-based delivery is always disabled when `NODE_ENV=test`; tests use injected providers instead.
+## Develop with Supabase
 
-Email is delivered through Resend's HTTPS API. To enable it in production, verify the sender domain in Resend and set all four email-related variables shown above. A partial email configuration is logged and skipped. Leaving notification configuration unset disables delivery cleanly.
+Use this mode for database behavior, Supabase Auth, Storage uploads, and writable admin workflows.
 
-Push and SMS have injectable channel/provider interfaces but no production providers yet. Adding either provider does not require changes to the order routes or notification orchestrator.
+1. Create a development Supabase project.
+2. Copy the environment template and fill in the three Supabase credentials:
 
-Every event has a stable key such as `new-order:<order-id>` or `status-change:<order-id>:<fulfillment-status>:<payment-status>`. The email channel appends `:email` and sends it as Resend's idempotency key. Resend deduplicates identical requests for that key during its provider retention window; there is no application-side retry worker or permanent notification ledger.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-## Database
+3. Apply **all** SQL files in [supabase/migrations/](supabase/migrations/) in filename order through the Supabase SQL Editor or a configured Supabase CLI workflow. The migrations include catalog seeds, inventory transactions, demand history, image storage, pickup windows, and public order numbers. Existing databases should receive only migrations they have not already applied.
+4. Provision an admin account as described below.
+5. Run `npm run dev`, sign in at `/admin/login`, set product stock, and create an enabled, selectable pickup window in the admin availability screen before testing checkout. The current-inventory migration initializes stock to zero.
 
-Run migrations in order:
+For deterministic menu UI work, set `MENU_DATA_SOURCE=fixture` in `.env.local` and run `npm run dev`. This replaces only menu reads; checkout, pickup windows, and admin workflows still need Supabase. Fixture selection is disabled in production.
 
-1. `20250313000000_create_inventory_slots.sql` – inventory per item per period
-2. `20250313000001_create_flavor_requests.sql` – legacy customer flavor requests (removed by migration 12)
-3. `20250313100000_atomic_reserve_inventory.sql` – orders table + atomic reserve (prevents overselling)
-4. `20260909030347_protect_public_order_tracking.sql` – separate public tracking tokens from internal order IDs
-5. `20260909040137_create_catalog.sql` – product/category catalog tables and initial seed data
-6. `20260909150000_current_product_inventory.sql` – replaces period slots with current on-hand stock and atomic cancellation restoration
-7. `20260909200000_server_authoritative_checkout.sql` – server-authoritative catalog validation, pricing, order snapshots, and private order access
-8. `20260909201000_private_flavor_requests.sql` – protects the legacy customer flavor-request table before its removal
-9. `20260909210000_admin_catalog_reordering.sql` – atomic admin category and product ordering
-10. `20260910010000_atomic_admin_inventory_adjustment.sql` – concurrency-safe admin inventory adjustments
-11. `20260910041324_add_product_image_storage.sql` – public product-image bucket with restricted uploads
-12. `20260910173807_anonymous_product_demand_history.sql` – anonymous demand-event history, lifecycle triggers, atomic signals, admin aggregates, and legacy PII table removal
+### Environment variables
 
-## Menu
+Supabase credentials are required for Supabase mode and deployment. They are unnecessary for `npm run dev:local`. Keep `.env.local` out of Git and keep the service-role key in server-side code.
 
-PostgreSQL tables `categories` and `products` are the authoritative catalog. Set `products.is_archived` to move an item between the current menu and Past Flavors. `product_inventory` stores one current `quantity_on_hand` per product; an active product at zero stays visible but cannot be ordered. The migration intentionally resets all prelaunch period inventory to zero.
+| Variable | When needed | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase mode | Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase mode | Publishable key for cookie-backed Auth clients |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase mode | Server-only privileged database access |
+| `LOCAL_DATA_SOURCE` | Local mode | Set to `json` automatically by `npm run dev:local`; ignored in production |
+| `MENU_DATA_SOURCE` | Optional development | Set to `fixture` for menu-only fixture reads; ignored in production |
+| `NEXT_PUBLIC_VENMO_HANDLE` | Optional | Checkout handle; defaults to `@LittleTownBakes` |
+| `NOTIFICATIONS_ENABLED` | Optional email delivery | Set to `true` to enable configured channels; disabled by default |
+| `RESEND_API_KEY` | Email delivery | Server-only Resend API key |
+| `NOTIFICATION_EMAIL_FROM` | Email delivery | Sender on a Resend-verified domain, such as `Little Town Bakes <orders@updates.example.com>` |
+| `BAKER_NOTIFICATION_EMAIL` | Email delivery | Baker inbox for operational order notifications |
+| `ADMIN_ORDERS_URL` | Optional email delivery | Absolute admin orders URL included in notifications |
 
-For local UI work without Supabase menu reads, set `MENU_DATA_SOURCE=fixture` in `.env.local` and run `npm run dev`. The committed `fixtures/menu.json` contains in-stock, sold-out, multi-category, and archived examples. Fixture selection is disabled whenever `NODE_ENV=production`, even if `MENU_DATA_SOURCE` is set, so deployed production builds continue to use the Supabase catalog and server-authoritative checkout.
+The environment template contains the basic settings. Add the notification variables above when enabling email.
 
-`product_demand_events` preserves anonymous demand for each sold-out or archived period. Database triggers open and close periods when inventory or archive state changes. Lifetime sales remain derived from non-canceled order snapshots and are not combined with demand.
+### Admin accounts
 
-Product photos uploaded by an admin use the public `product-images` Supabase Storage bucket, while `products.image` stores the resulting public URL. Public read is intentional for menu assets. Upload capabilities, finalization, and conservative replacement cleanup require the existing server-verified admin role; the service-role key never reaches the browser. The bucket accepts only JPEG, PNG, WebP, and GIF files up to 15 MiB. Existing `/img/...` values continue to work and are never treated as managed Storage objects during cleanup.
+Supabase mode requires an email/password Auth account with verified `app_metadata.role` set to `admin`. There is no public signup or admin account-management UI.
 
-## About Page
+1. Create the user in **Supabase Dashboard → Authentication → Users**, or through `supabase.auth.admin.createUser` in trusted server-side tooling.
+2. Copy the user ID and assign the role through a trusted administrative client using `SUPABASE_SERVICE_ROLE_KEY`:
 
-Edit `public/about.json` for the About page (story, how to order, contact). See `CONTENT_ABOUT.md` for prompts and field descriptions.
+   ```ts
+   await supabase.auth.admin.updateUserById(userId, {
+     app_metadata: { role: "admin" },
+   });
+   ```
 
-**Admin:** `/admin` redirects to the protected admin area. Sign in at `/admin/login` with a Supabase Auth email/password account whose verified `app_metadata.role` is `admin`.
+3. Sign in at `/admin/login`. Add additional admins through the same provisioning process.
 
-## Admin provisioning and recovery
+Authorization reads `app_metadata`, never user-editable metadata. Keep administrative Auth methods in trusted server-side tooling. Until a recovery UI exists, a trusted operator can set a temporary password with `supabase.auth.admin.updateUserById(userId, { password: temporaryPassword })` and communicate it securely.
 
-Admin accounts must be managed through the Supabase Dashboard or trusted server-side tooling. Never run administrative Auth methods or use the service-role key in browser code.
+## Data and request flow
 
-1. In Supabase Dashboard, open **Authentication → Users** and create the initial bakery owner with an email and temporary password. The equivalent trusted server-side method is `supabase.auth.admin.createUser`. Do not add public signup to this application.
-2. Copy the user ID, then use a trusted server-side script with `SUPABASE_SERVICE_ROLE_KEY` and `supabase.auth.admin.updateUserById(userId, { app_metadata: { role: "admin" } })`. Authorization uses `app_metadata`, never user-editable metadata.
-3. Add another admin later with the same Dashboard or server-side create-user process, then assign the same `app_metadata.role` value through the administrative API. Existing admins do not receive account-management UI in this application.
-4. Until a password-reset screen exists, a trusted operator can set a temporary password with `supabase.auth.admin.updateUserById(userId, { password: temporaryPassword })`, communicate it securely, and replace it again on request. Alternatively, add a dedicated recovery callback/update-password UX before issuing recovery links.
+- **Catalog:** `categories` and `products` define the menu. `products.is_archived` moves items to Past Flavors; active products with zero stock stay visible but cannot be ordered.
+- **Inventory and checkout:** `product_inventory.quantity_on_hand` is current stock per product. Database functions validate catalog prices, save order snapshots, reserve stock atomically, and restore stock on cancellation.
+- **Pickup:** `pickup_windows` holds enabled time windows. Checkout validates the selected window on the server. Customers can choose future windows at least 15 minutes before their start, or open windows with at least 15 minutes remaining.
+- **Orders:** Human-readable public order numbers are distinct from internal IDs and tracking tokens. `/api/orders/track/[token]` returns the public tracking view; internal order access and status changes require admin authorization.
+- **Demand:** `product_demand_events` records anonymous interest during sold-out or archived periods. Triggers manage period boundaries. Lifetime sales come from non-canceled order snapshots and remain separate from demand counts.
+- **Product images:** Admin uploads use the public `product-images` Storage bucket, accepting JPEG, PNG, WebP, and GIF files up to 15 MiB. Upload, finalization, and replacement cleanup require server-verified admin access. `products.image` stores the public URL; existing `/img/...` assets continue to work.
 
-The administrative client used for provisioning must remain in server-only tooling. The application keeps caller authentication separate from `lib/supabaseAdmin.ts`, which continues to perform privileged database operations only after the caller passes the server authorization check.
+### Notifications
 
-The production provisioning workflow above is not needed for `npm run dev:local`. Local authentication uses a separate server-only development cookie and the displayed fake credentials. The local identity and JSON adapter cannot be enabled when `NODE_ENV=production`.
+Email uses Resend's HTTPS API. Enable it with `NOTIFICATIONS_ENABLED=true` and all three email settings: `RESEND_API_KEY`, `NOTIFICATION_EMAIL_FROM`, and `BAKER_NOTIFICATION_EMAIL`. Partial email configuration is logged and skipped. Delivery is disabled under `NODE_ENV=test`; tests inject providers.
 
-## Deployment
+Order routes persist changes before awaiting notifications. The service settles channel deliveries independently, so a provider failure does not change a successful order response. Event keys include the order ID and, for status changes, fulfillment and payment status; the email channel adds `:email` for the provider idempotency key. There is no application retry worker or permanent delivery ledger. Push and SMS have injectable interfaces but no production providers.
 
-- **Vercel:** Connect the repo, set env vars for **Production** (and Preview if needed), deploy.
-- **Health:** `GET /api/health` — liveness (app up). `GET /api/health?ready=1` — readiness (Supabase + `orders` table); use after deploys or when debugging connection issues.
-- **Personal backlog (optional):** Add `PRODUCTION_SETUP.md` in the repo root if you want a local-only checklist — it is listed in `.gitignore` and is not committed.
+## Commands and verification
 
-## Scripts
+| Command | Purpose |
+| --- | --- |
+| `npm run dev:local` | JSON-backed development with Turbopack |
+| `npm run local:reset` | Replace generated local data, discarding local orders |
+| `npm run dev` | Supabase-backed development with Turbopack |
+| `npm test` | Run Vitest unit, route, and component tests once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:db` | Run SQL and transaction/concurrency tests in disposable PostgreSQL 17; requires Bash and Docker |
+| `npm run lint` | Run the configured Next.js ESLint check |
+| `npm run build` | Create the production build |
+| `npm run start` | Serve an existing production build |
+| `npm run test:smoke` | Start the production server on a temporary port and check `/`, `/checkout`, `/admin/login`, and `/api/health`; build first |
 
-- `npm run dev` – development with Turbopack
-- `npm run dev:local` – self-contained JSON-backed development with no Supabase dependency
-- `npm run local:reset` – replace `.local/data.json` with fresh representative data
-- `npm run build` – production build
-- `npm run start` – production server
-- `npm run test` – Vitest unit tests
-- `npm run test:db` – isolated PostgreSQL inventory transaction and concurrency tests (requires Docker)
-- `npm run lint` – ESLint
+For application changes, run the checks used by CI:
+
+```bash
+npm test
+npm run lint
+npm run build
+npm run test:smoke
+```
+
+For migrations or inventory transaction changes, also run `npm run test:db`. That script applies every migration to an isolated database and tests concurrent demand signals, inventory reservations, public order numbering, and admin stock adjustments. CI currently runs the application checks above, but does not run the Docker database suite.
+
+Work on a branch and open a pull request against `main`. Include what changed and which checks you ran.
+
+## Content and deployment
+
+Edit [public/about.json](public/about.json) for the About page; [CONTENT_ABOUT.md](CONTENT_ABOUT.md) describes its fields. Brand constants live in [lib/brand.ts](lib/brand.ts), with asset notes in [BRAND_ASSETS.md](BRAND_ASSETS.md).
+
+Deploy to Vercel by connecting the repository, applying database migrations, and setting the Supabase environment variables for Production and any Preview environments that need database access. Set public environment variables before building. A production build uses Supabase even if local JSON or fixture flags are present.
+
+- `GET /api/health` checks process liveness without a database call.
+- `GET /api/health?ready=1` checks Supabase configuration and access to the `orders` table, returning `503` if unavailable. It does not verify the entire schema or Storage configuration.
+
+For a self-hosted Node.js server, run `npm run build` followed by `npm run start` with the same environment configuration.
