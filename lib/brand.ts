@@ -7,5 +7,5 @@ export const BRAND = {
 		src: "/brand/little-town-bakes-logo.png",
 		alt: "Little Town Bakes logo",
 	},
-	favicon: "/brand/favicon.ico",
+	favicon: "/brand/favicon.svg",
 } as const;
