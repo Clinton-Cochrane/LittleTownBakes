@@ -82,6 +82,7 @@ Supabase credentials are required for Supabase mode and deployment. They are unn
 | `LOCAL_DATA_SOURCE` | Local mode | Set to `json` automatically by `npm run dev:local`; ignored in production |
 | `MENU_DATA_SOURCE` | Optional development | Set to `fixture` for menu-only fixture reads; ignored in production |
 | `NEXT_PUBLIC_VENMO_HANDLE` | Optional | Checkout handle; defaults to `@LittleTownBakes` |
+| `NEXT_PUBLIC_SITE_URL` | Official-domain launch | Final HTTPS origin used for metadata, canonicals, sitemap, and business JSON-LD; set before building |
 | `NOTIFICATIONS_ENABLED` | Optional email delivery | Set to `true` to enable configured channels; disabled by default |
 | `RESEND_API_KEY` | Email delivery | Server-only Resend API key |
 | `NOTIFICATION_EMAIL_FROM` | Email delivery | Sender on a Resend-verified domain, such as `Little Town Bakes <orders@updates.example.com>` |
@@ -135,7 +136,7 @@ Order routes persist changes before awaiting notifications. The service settles 
 | `npm run lint` | Run the configured Next.js ESLint check |
 | `npm run build` | Create the production build |
 | `npm run start` | Serve an existing production build |
-| `npm run test:smoke` | Start the production server on a temporary port and check `/`, `/checkout`, `/admin/login`, and `/api/health`; build first |
+| `npm run test:smoke` | Start the production server on a temporary port; check public titles/SEO, workflow noindex, robots, sitemap, and `/api/health`; build first |
 
 For application changes, run the checks used by CI:
 
@@ -160,3 +161,19 @@ Deploy to Vercel by connecting the repository, applying database migrations, and
 - `GET /api/health?ready=1` checks Supabase configuration and access to the `orders` table, returning `503` if unavailable. It does not verify the entire schema or Storage configuration.
 
 For a self-hosted Node.js server, run `npm run build` followed by `npm run start` with the same environment configuration.
+
+### SEO deployment
+
+There is no official production domain yet. SEO configuration and URL construction live in [lib/seo.ts](lib/seo.ts). Leave `NEXT_PUBLIC_SITE_URL` unset until the domain is selected; never substitute a temporary Render/Vercel hostname. Development falls back to `http://localhost:3000`. Production without this setting omits canonical URLs and the business URL, serves an empty sitemap, and does not advertise a sitemap in `robots.txt`.
+
+1. Select the official domain.
+2. Set `NEXT_PUBLIC_SITE_URL` to its final HTTPS origin (no path, query, fragment, or credentials) **before building**.
+3. Build and deploy with that configuration.
+4. Verify the canonical URLs on `/`, `/menu`, and `/request-flavor`, plus `/sitemap.xml` and its reference in `/robots.txt`.
+5. Add the site/domain to Google Search Console.
+6. Submit `/sitemap.xml`.
+7. Validate homepage Bakery JSON-LD with [Google's Rich Results Test](https://search.google.com/test/rich-results). The address intentionally stops at Oakley, CA, US; do not add the residential pickup street address to satisfy validator recommendations.
+8. Add real contact/social fields to the explicit SEO configuration only after client confirmation. JSON-LD never reads contact or pickup information from `public/about.json`. Add the logo URL through `siteUrl` after the approved asset described in [BRAND_ASSETS.md](BRAND_ASSETS.md) is delivered.
+9. Add a dedicated Open Graph image later as a separate branding task.
+
+Only the three public landing pages belong in the sitemap. Checkout, all order tracking pages, and all admin pages inherit `noindex, nofollow`; robots exclusions supplement those HTML directives.

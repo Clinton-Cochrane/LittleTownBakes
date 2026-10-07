@@ -7,6 +7,13 @@ import {
 	toTiktokUrl,
 } from "@/lib/aboutContent";
 import { BRAND } from "@/lib/brand";
+import { getBakeryStructuredData, publicPageMetadata, serializeJsonLd, SITE } from "@/lib/seo";
+
+export const metadata = {
+	...publicPageMetadata("Bakery in Oakley, CA", SITE.description, "/"),
+	// The root layout's template applies to descendants, not its own page segment.
+	title: { absolute: `Bakery in Oakley, CA | ${SITE.name}` },
+};
 
 export default async function Home() {
 	const { about, howToOrder, contact } = await getAboutContent();
@@ -29,6 +36,10 @@ export default async function Home() {
 
 	return (
 		<div className="mx-auto max-w-3xl">
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: serializeJsonLd(getBakeryStructuredData()) }}
+			/>
 			<MenuPreloader />
 			<section className="mb-10 overflow-hidden rounded-card border border-powder bg-gradient-to-br from-cream via-powder-mist/65 to-peach-mist p-6 shadow-card sm:p-9">
 				<div className="mb-5 h-1 w-16 rounded-full bg-accent" aria-hidden />
