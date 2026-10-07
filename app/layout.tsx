@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Header from "@/components/header";
 import { CartProvider } from "@/components/cart/useCart";
 import { BRAND } from "@/lib/brand";
+import { getSiteOrigin, SITE } from "@/lib/seo";
 
 const dmSans = DM_Sans({
 	subsets: ["latin"],
@@ -17,12 +18,22 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+	metadataBase: getSiteOrigin(),
 	title: {
 		default: BRAND.name,
 		template: `%s | ${BRAND.name}`,
 	},
-	description: `${BRAND.tagline} ${BRAND.description}`,
+	description: SITE.description,
+	applicationName: SITE.name,
 	icons: { icon: BRAND.favicon },
+	robots: { index: true, follow: true },
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		siteName: SITE.name,
+		title: SITE.name,
+		description: SITE.description,
+	},
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

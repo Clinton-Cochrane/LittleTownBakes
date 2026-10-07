@@ -1,3 +1,9 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	robots: { index: false, follow: false },
+};
+
 /**
  * Public admin route wrapper. Protected pages add their navigation through
  * the authenticated route-group layout; the login page intentionally does not.
