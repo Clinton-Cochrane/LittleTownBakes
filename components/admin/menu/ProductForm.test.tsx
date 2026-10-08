@@ -23,6 +23,7 @@ describe("ProductForm photo controls", () => {
 		const product: AdminMenuProduct = {
 			id: "cake", categoryId: "cakes", name: "Cake", description: "", priceCents: 400,
 			image: "/img/cake.png", maxPerOrder: 6, isArchived: false, sortOrder: 10, quantityOnHand: 2,
+			soldCount: 0, demandCount: 0, currentDemandCount: 0,
 		};
 		const html = render(product);
 		expect(html).toContain('src="/img/cake.png"');
