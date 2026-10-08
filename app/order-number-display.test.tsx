@@ -32,6 +32,7 @@ describe("human-facing order numbers", () => {
 	it("renders the public number instead of the internal ID on the admin page", async () => {
 		const order: AdminOrderRecord = {
 			...publicOrder,
+			pickup: undefined,
 			id: "ord_internal",
 			trackingToken: null,
 			createdAt: "2026-09-11T20:00:00.000Z",

@@ -25,7 +25,7 @@ function product(quantityOnHand: number): AdminMenuProduct {
 describe("MenuProductCard", () => {
 	it("renders the authoritative quantity with touch adjustment controls", () => {
 		const html = renderToStaticMarkup(createElement(MenuProductCard, {
-			product: product(12), onAdjust: vi.fn(), onEdit: vi.fn(), onArchive: vi.fn(),
+			product: product(12), onSet: vi.fn(), onAdjust: vi.fn(), onEdit: vi.fn(), onArchive: vi.fn(),
 		}));
 
 		expect(html).toContain("12 available");
@@ -36,13 +36,15 @@ describe("MenuProductCard", () => {
 
 	it("keeps a zero-stock active product visible and refillable", () => {
 		const html = renderToStaticMarkup(createElement(MenuProductCard, {
-			product: product(0), onAdjust: vi.fn(), onEdit: vi.fn(), onArchive: vi.fn(),
+			product: product(0), onSet: vi.fn(), onAdjust: vi.fn(), onEdit: vi.fn(), onArchive: vi.fn(),
 		}));
 
 		expect(html).toContain("Chocolate Cake");
 		expect(html).toContain("Sold Out · 0 available");
 		expect(html).toContain("Refill");
-		expect(html).toContain("82 sold · 31 demand signals");
+		expect(html).not.toContain("82 sold · 31 demand signals");
+		expect(html).toContain('aria-expanded="false"');
+		expect(html).toContain("Chocolate Cake quantity");
 		expect(html).toContain("disabled");
 	});
 
@@ -52,7 +54,8 @@ describe("MenuProductCard", () => {
 		}));
 
 		expect(html).toContain("Restore");
-		expect(html).toContain("82 sold · 31 demand signals");
+		expect(html).not.toContain("82 sold · 31 demand signals");
+		expect(html).toContain('aria-expanded="false"');
 		expect(html).not.toContain("Add one Chocolate Cake");
 		expect(html).not.toContain("Refill");
 	});

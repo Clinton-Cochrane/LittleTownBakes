@@ -2,8 +2,8 @@
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import AdminInventoryPage from "./page";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AdminMenu } from "./AdminMenu";
 
 const activeProducts = [
 	{ id: "cookie", name: "Chocolate Chip" },
@@ -34,11 +34,21 @@ function inventoryFetch({
 	const quantities = new Map([["cookie", 4], ["cake", 2], ["past", 9]]);
 	const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
 		const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-		if (url === "/api/admin/inventory" && !init?.method) {
-			return jsonResponse([...quantities].map(([product_id, quantity_on_hand]) => ({ product_id, quantity_on_hand })));
-		}
-		if (url === "/api/menu" && !init?.method) {
-			return jsonResponse({ items: activeProducts, archivedItems: archivedProducts });
+		if (url === "/api/admin/products" && !init?.method) {
+			return jsonResponse([...activeProducts, ...archivedProducts].map((item) => ({
+				...item,
+				categoryId: "cookies",
+				description: "",
+				priceCents: 350,
+				image: null,
+				maxPerOrder: 12,
+				isArchived: archivedProducts.some((archived) => archived.id === item.id),
+				sortOrder: 10,
+				quantityOnHand: quantities.get(item.id) ?? 0,
+				soldCount: 0,
+				demandCount: 0,
+				currentDemandCount: 0,
+			})));
 		}
 		if (url === "/api/admin/categories" && !init?.method) {
 			return jsonResponse([{ id: "cookies", name: "Cookies", sortOrder: 10 }]);
@@ -66,11 +76,11 @@ function mutationCalls(fetchMock: ReturnType<typeof vi.fn>, path?: string) {
 	return fetchMock.mock.calls.filter(([url, init]) => init?.method === "POST" && (!path || url === path));
 }
 
-async function renderInventory(fetchMock: ReturnType<typeof vi.fn>) {
+async function renderMenu(fetchMock: ReturnType<typeof vi.fn>) {
 	vi.stubGlobal("fetch", fetchMock);
 	const user = userEvent.setup();
-	render(<AdminInventoryPage />);
-	await screen.findByRole("heading", { name: "Current stock" });
+	render(<AdminMenu />);
+	await screen.findByRole("heading", { name: "Menu Management" });
 	return user;
 }
 
@@ -78,65 +88,36 @@ function quantity(name: string) {
 	return screen.getByRole("textbox", { name: `${name} quantity` }) as HTMLInputElement;
 }
 
+beforeEach(() => {
+	window.history.replaceState(null, "", "/admin/menu");
+});
+
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
 });
 
-describe("Admin Inventory current-stock editor", () => {
-	it("shows active products first, excludes archived products, defaults missing rows to zero, and keeps Bulk edit below", async () => {
+describe("Menu Management stock editor", () => {
+	it("shows active and sold-out products with zero defaults, without bulk tools or stock filters", async () => {
 		const { fetchMock } = inventoryFetch();
-		await renderInventory(fetchMock);
+		await renderMenu(fetchMock);
 
 		expect(screen.getByText("Chocolate Chip")).toBeTruthy();
 		expect(screen.getByText("New Cookie")).toBeTruthy();
 		expect(screen.queryByText("Past Flavor")).toBeNull();
 		expect(quantity("New Cookie").value).toBe("0");
-		expect(screen.queryByText("Update on-hand stock")).toBeNull();
-		expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
-		const current = screen.getByRole("heading", { name: "Current stock" });
-		const bulk = screen.getByRole("heading", { name: "Bulk edit" });
-		expect(current.compareDocumentPosition(bulk) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Download CSV" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Download JSON" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Product template" })).toBeTruthy();
-		expect(screen.getByLabelText("Upload inventory file")).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "Bulk edit" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Download CSV" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Download JSON" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Product template" })).toBeNull();
+		expect(screen.queryByLabelText("Upload inventory file")).toBeNull();
+		expect(screen.queryByRole("button", { name: "In Stock" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Add Product" })).toBeTruthy();
-	});
-
-	it("creates a product through the shared form and shows it immediately with zero stock", async () => {
-		const { fetchMock } = inventoryFetch();
-		const baseImplementation = fetchMock.getMockImplementation()!;
-		fetchMock.mockImplementation(async (input: string | URL | Request, init?: RequestInit) => {
-			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-			if (url === "/api/admin/products" && init?.method === "POST") {
-				const values = JSON.parse(String(init.body));
-				return jsonResponse({ id: "oatmeal", ...values, isArchived: false, sortOrder: 40, quantityOnHand: 0 });
-			}
-			return baseImplementation(input, init);
-		});
-		const user = await renderInventory(fetchMock);
-
-		await user.click(screen.getByRole("button", { name: "Add Product" }));
-		await user.type(screen.getByLabelText("Name"), "Oatmeal Cookie");
-		await user.type(screen.getByLabelText("Price"), "4.25");
-		await user.click(screen.getByRole("button", { name: "Save Product" }));
-
-		await screen.findByText("Oatmeal Cookie");
-		expect(quantity("Oatmeal Cookie").value).toBe("0");
-		const creation = fetchMock.mock.calls.find(([url, init]) => url === "/api/admin/products" && init?.method === "POST");
-		expect(JSON.parse(String(creation?.[1]?.body))).toMatchObject({
-			name: "Oatmeal Cookie",
-			priceCents: 425,
-			categoryId: "cookies",
-			maxPerOrder: 12,
-			image: null,
-		});
 	});
 
 	it("increments and decrements with atomic delta requests while keeping success quiet", async () => {
 		const { fetchMock } = inventoryFetch();
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 
 		await user.click(screen.getByRole("button", { name: "Add one Chocolate Chip" }));
 		await waitFor(() => expect(quantity("Chocolate Chip").value).toBe("5"));
@@ -150,7 +131,7 @@ describe("Admin Inventory current-stock editor", () => {
 
 	it("disables minus at zero, sends no decrement, and can increment a missing row", async () => {
 		const { fetchMock } = inventoryFetch();
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const minus = screen.getByRole("button", { name: "Remove one New Cookie" }) as HTMLButtonElement;
 
 		expect(minus.disabled).toBe(true);
@@ -165,7 +146,7 @@ describe("Admin Inventory current-stock editor", () => {
 
 	it("sets an exact quantity on blur and skips an unchanged blur", async () => {
 		const { fetchMock } = inventoryFetch();
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const input = quantity("Chocolate Chip");
 
 		await user.click(input);
@@ -182,9 +163,21 @@ describe("Admin Inventory current-stock editor", () => {
 		expect(screen.queryByText("Inventory saved.")).toBeNull();
 	});
 
+	it("saves an exact quantity once when Enter is pressed", async () => {
+		const { fetchMock } = inventoryFetch();
+		const user = await renderMenu(fetchMock);
+		const input = quantity("Chocolate Chip");
+		await user.clear(input);
+		await user.type(input, "18{Enter}");
+		await waitFor(() => expect(mutationCalls(fetchMock, "/api/admin/inventory")).toHaveLength(1));
+		expect(JSON.parse(String(mutationCalls(fetchMock)[0]?.[1]?.body))).toEqual({ product_id: "cookie", quantity_on_hand: 18 });
+		await waitFor(() => expect(input.disabled).toBe(false));
+		expect(input.value).toBe("18");
+	});
+
 	it.each(["", "-1", "1.5", "abc", "2147483648"])("rejects and reverts invalid quantity %j", async (value) => {
 		const { fetchMock } = inventoryFetch();
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const input = quantity("Chocolate Chip");
 
 		await user.clear(input);
@@ -198,7 +191,7 @@ describe("Admin Inventory current-stock editor", () => {
 
 	it("resynchronizes and shows a row error after an exact-set failure", async () => {
 		const { fetchMock } = inventoryFetch({ failExact: true });
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const input = quantity("Chocolate Chip");
 
 		await user.clear(input);
@@ -207,24 +200,55 @@ describe("Admin Inventory current-stock editor", () => {
 
 		await waitFor(() => expect(input.value).toBe("4"));
 		expect((await screen.findByRole("alert")).textContent).toContain("Exact save failed");
-		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/inventory")).toHaveLength(3);
+		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/products")).toHaveLength(2);
+	});
+
+	it("clears a quantity validation error when stock is corrected with an adjustment", async () => {
+		const { fetchMock } = inventoryFetch();
+		const user = await renderMenu(fetchMock);
+		const input = quantity("Chocolate Chip");
+		await user.clear(input);
+		await user.type(input, "1.5");
+		await user.tab();
+		await screen.findByRole("alert");
+		await user.click(screen.getByRole("button", { name: "Add one Chocolate Chip" }));
+		await waitFor(() => expect(input.value).toBe("5"));
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("resynchronizes and shows a row error after an adjustment failure", async () => {
 		const { fetchMock } = inventoryFetch({ failAdjust: true });
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 
 		await user.click(screen.getByRole("button", { name: "Add one Chocolate Chip" }));
 
 		await waitFor(() => expect(quantity("Chocolate Chip").value).toBe("4"));
 		expect((await screen.findByRole("alert")).textContent).toContain("Adjustment failed");
-		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/inventory")).toHaveLength(2);
+		expect(fetchMock.mock.calls.filter(([url]) => url === "/api/admin/products")).toHaveLength(2);
+	});
+
+	it("keeps a failed save visible and the field usable when refreshing stock also fails", async () => {
+		const { fetchMock } = inventoryFetch({ failExact: true });
+		const baseImplementation = fetchMock.getMockImplementation()!;
+		let productReads = 0;
+		fetchMock.mockImplementation(async (input: string | URL | Request, init?: RequestInit) => {
+			if (input === "/api/admin/products" && ++productReads > 1) throw new Error("Offline");
+			return baseImplementation(input, init);
+		});
+		const user = await renderMenu(fetchMock);
+		const input = quantity("Chocolate Chip");
+		await user.clear(input);
+		await user.type(input, "25");
+		await user.tab();
+		await waitFor(() => expect(input.disabled).toBe(false));
+		expect(input.value).toBe("4");
+		expect((await screen.findByRole("alert")).textContent).toContain("Exact save failed");
 	});
 
 	it("serializes blur-save before an immediate plus so 12-style editing becomes exact 25 then 26", async () => {
 		const gate = deferred();
 		const { fetchMock } = inventoryFetch({ exactGate: gate.promise });
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const input = quantity("Chocolate Chip");
 
 		await user.clear(input);
@@ -243,7 +267,7 @@ describe("Admin Inventory current-stock editor", () => {
 
 	it("does not lose rapid same-product increments", async () => {
 		const { fetchMock } = inventoryFetch();
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const plus = screen.getByRole("button", { name: "Add one Chocolate Chip" });
 
 		await user.click(plus);
@@ -257,7 +281,7 @@ describe("Admin Inventory current-stock editor", () => {
 	it("keeps another product editable while one product is saving", async () => {
 		const gate = deferred();
 		const { fetchMock } = inventoryFetch({ exactGate: gate.promise });
-		const user = await renderInventory(fetchMock);
+		const user = await renderMenu(fetchMock);
 		const cookie = quantity("Chocolate Chip");
 		const cake = quantity("Vanilla Cake");
 

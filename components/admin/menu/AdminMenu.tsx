@@ -73,41 +73,57 @@ export function AdminMenu() {
 	}
 
 	async function refreshProduct(productId: string) {
-		const response = await fetch("/api/admin/products");
-		if (!response.ok) return;
-		const fresh = (await response.json()) as AdminMenuProduct[];
-		const product = fresh.find((candidate) => candidate.id === productId);
-		if (product) updateProduct(product);
+		try {
+			const response = await fetch("/api/admin/products");
+			if (!response.ok) return null;
+			const fresh = (await response.json()) as AdminMenuProduct[];
+			const product = fresh.find((candidate) => candidate.id === productId);
+			if (!product) return null;
+			updateProduct(product);
+			return product.quantityOnHand;
+		} catch {
+			return null;
+		}
 	}
 
-	function adjust(productId: string, delta: number) {
+	function mutateStock(productId: string, path: string, body: object): Promise<number | null> {
 		setProductErrors((current) => ({ ...current, [productId]: "" }));
 		setPending((current) => ({ ...current, [productId]: (current[productId] ?? 0) + 1 }));
+		let savedQuantity: number | null = null;
 		return queue.current.enqueue(productId, async () => {
 			try {
-				const response = await fetch("/api/admin/inventory/adjust", {
+				const response = await fetch(path, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ product_id: productId, delta }),
+					body: JSON.stringify(body),
 				});
 				if (!response.ok) {
-					const message = await responseError(response, "Quantity could not be updated. Please try again.");
-					await refreshProduct(productId);
-					setProductErrors((current) => ({ ...current, [productId]: message }));
+					const message = await responseError(response, "Quantity could not be updated.");
+					savedQuantity = await refreshProduct(productId);
+					setProductErrors((current) => ({ ...current, [productId]: `${message} The change was not saved. Please check the quantity and try again.` }));
 					return;
 				}
 				const inventory = await response.json() as { quantity_on_hand: number };
+				savedQuantity = inventory.quantity_on_hand;
 				setProducts((current) => current.map((product) => product.id === productId
 					? { ...product, quantityOnHand: inventory.quantity_on_hand }
 					: product));
 				setProductErrors((current) => ({ ...current, [productId]: "" }));
 			} catch {
-				await refreshProduct(productId);
-				setProductErrors((current) => ({ ...current, [productId]: "Quantity could not be updated. Check your connection and try again." }));
+				savedQuantity = await refreshProduct(productId);
+				setProductErrors((current) => ({ ...current, [productId]: "Quantity could not be confirmed. Check your connection and the quantity before trying again." }));
 			} finally {
 				setPending((current) => ({ ...current, [productId]: Math.max(0, (current[productId] ?? 1) - 1) }));
 			}
-		});
+		}).then(() => savedQuantity);
+	}
+
+	function adjust(productId: string, delta: number) {
+		return mutateStock(productId, "/api/admin/inventory/adjust", { product_id: productId, delta }).then(() => undefined);
+	}
+
+	function setQuantity(productId: string, quantity: number) {
+		return mutateStock(productId, "/api/admin/inventory", { product_id: productId, quantity_on_hand: quantity });
 	}
 
 	async function saveProduct(values: ProductValues, product: AdminMenuProduct | null) {
@@ -201,7 +217,7 @@ export function AdminMenu() {
 	return (
 		<>
 			<div className="flex items-start justify-between gap-3">
-				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Menu</h1><p className="mt-1 text-sm text-muted">Manage what is available today.</p></div>
+				<div><h1 className="font-display text-2xl font-semibold text-cocoa">Menu Management</h1><p className="mt-1 text-sm text-muted">Adjust stock or expand a product to manage its details.</p></div>
 				<AddProductAction categories={categories} onCreated={addCreatedProduct} />
 			</div>
 			<div className="mt-6 grid grid-cols-2 rounded-button border border-crust bg-wheat p-1" role="tablist" aria-label="Menu views">
@@ -214,7 +230,7 @@ export function AdminMenu() {
 						<h2 id={`${view}-category-${section.category.id}`} className="mb-3 font-display text-xl font-semibold text-cocoa">{section.category.name}</h2>
 						<div className="grid gap-4">
 							{view === "current"
-								? section.products.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />)
+								? section.products.map((product) => <MenuProductCard key={product.id} product={product} pending={pending[product.id]} error={productErrors[product.id]} onSet={(quantity) => setQuantity(product.id, quantity)} onAdjust={(delta) => adjust(product.id, delta)} onEdit={() => setEditing(product)} onArchive={() => void archive(product)} />)
 								: section.products.map((product) => <PastFlavorCard key={product.id} product={product} error={productErrors[product.id]} onEdit={() => setEditing(product)} onRestore={() => void restore(product)} />)}
 						</div>
 					</section>

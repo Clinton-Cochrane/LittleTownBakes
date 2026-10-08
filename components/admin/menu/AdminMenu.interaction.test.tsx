@@ -188,4 +188,43 @@ describe("AdminMenu refill interaction", () => {
 		finishAdjustment?.(jsonResponse({ product_id: "chocolate-cake", quantity_on_hand: 17 }));
 		await waitFor(() => expect(screen.getByText("17 available")).toBeTruthy());
 	});
+
+	it("archives through expanded details and restores a Past Flavor to zero stock", async () => {
+		let current = product(8);
+		const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			if (url === "/api/admin/products" && !init?.method) return jsonResponse([current]);
+			if (url === "/api/admin/categories" && !init?.method) return jsonResponse([{ id: "cakes", name: "Cakes", sortOrder: 10 }]);
+			if (url === "/api/admin/products/chocolate-cake/archive") {
+				current = { ...current, isArchived: true };
+				return jsonResponse(current);
+			}
+			if (url === "/api/admin/products/chocolate-cake/unarchive") {
+				current = { ...current, isArchived: false };
+				return jsonResponse(current);
+			}
+			if (url === "/api/admin/inventory" && init?.method === "POST") {
+				const values = JSON.parse(String(init.body));
+				current = { ...current, quantityOnHand: values.quantity_on_hand };
+				return jsonResponse(values);
+			}
+			throw new Error(`Unexpected fetch: ${init?.method ?? "GET"} ${url}`);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+		vi.stubGlobal("confirm", vi.fn(() => true));
+		const user = userEvent.setup();
+		render(<AdminMenu />);
+		await screen.findByRole("heading", { name: "Chocolate Cake" });
+		await user.click(screen.getByRole("button", { name: "Show details for Chocolate Cake" }));
+		await user.click(screen.getByRole("button", { name: "Archive" }));
+		await waitFor(() => expect(screen.queryByRole("heading", { name: "Chocolate Cake" })).toBeNull());
+		await user.click(screen.getByRole("tab", { name: "Past Flavors (1)" }));
+		await screen.findByRole("heading", { name: "Chocolate Cake" });
+		expect(screen.getByRole("button", { name: "Show details for Chocolate Cake" }).getAttribute("aria-expanded")).toBe("false");
+		await user.click(screen.getByRole("button", { name: "Restore" }));
+		await screen.findByText("Sold Out · 0 available");
+		expect((screen.getByRole("textbox", { name: "Chocolate Cake quantity" }) as HTMLInputElement).value).toBe("0");
+		expect(screen.getByRole("tab", { name: "Current Menu (1)" }).getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("button", { name: "Refill" })).toBeTruthy();
+	});
 });
