@@ -20,7 +20,7 @@ type CartContextValue = {
 	removeItem: (id: string) => void;
 	clearCart: () => void;
 	getQty: (id: string) => number;
-	setQty: (id: string, qty: number) => void;
+	setQty: (id: string, qty: number, maxPerOrder?: number) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -82,8 +82,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 				return [...prev, { ...incoming, qty: clampQty(incoming.qty, incoming.maxPerOrder) }];
 			}
 			const copy = [...prev];
-			// prefer existing cap if present; otherwise allow incoming to set it
-			const max = copy[idx].maxPerOrder ?? incoming.maxPerOrder;
+			// A fresh menu action supplies the current quantity cap.
+			const max = incoming.maxPerOrder ?? copy[idx].maxPerOrder;
 			const mergedQty = clampQty(copy[idx].qty + incoming.qty, max);
 			copy[idx] = {
 				...copy[idx],
@@ -102,15 +102,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 	const getQty = useCallback((id: string) => items.find((i) => i.id === id)?.qty ?? 0, [items]);
 
-	const setQty = useCallback((id: string, qty: number) => {
+	const setQty = useCallback((id: string, qty: number, maxPerOrder?: number) => {
 		setItems((prev) => {
 			const idx = prev.findIndex((i) => i.id === id);
 			if (idx === -1) return prev; // require initial add
-			const max = prev[idx].maxPerOrder;
+			const max = maxPerOrder ?? prev[idx].maxPerOrder;
 			const clamped = clampQty(qty, max);
 			if (clamped <= 0) return prev.filter((i) => i.id !== id);
 			const copy = [...prev];
-			copy[idx] = { ...copy[idx], qty: clamped };
+			copy[idx] = { ...copy[idx], qty: clamped, maxPerOrder: max };
 			return copy;
 		});
 	}, []);

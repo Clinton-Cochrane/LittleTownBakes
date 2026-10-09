@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MenuCatalog, Section, EnrichedItem } from "@/lib/menuCatalog";
-import { buildSections, formatCurrency } from "@/lib/menuCatalog";
+import type { MenuCatalog, Section } from "@/lib/menuCatalog";
+import { buildSections, formatCurrency, isItemAvailable } from "@/lib/menuCatalog";
 import { loadMenu, refreshMenu } from "@/lib/menuLoader";
 import MenuSection from "./MenuSection";
 
@@ -29,10 +29,6 @@ type MenuBrowserProps = {
 		maxPerOrder?: number;
 	}) => void;
 };
-
-function isItemAvailable(item: EnrichedItem): boolean {
-	return (item as EnrichedItem).available ?? item.availability.inStock;
-}
 
 export default function MenuBrowser({ onAddToCart, getQty, onSetQty }: MenuBrowserProps) {
 	const [catalog, setCatalog] = useState<MenuCatalog>({ categories: [], items: [] });

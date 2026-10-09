@@ -1,9 +1,9 @@
-import type { Section, Item } from "@/lib/menuCatalog";
+import type { Section, EnrichedItem } from "@/lib/menuCatalog";
 import MenuCard from "./MenuCard";
 
 type Props = {
 	section: Section;
-	isItemAvailable: (item: Item) => boolean;
+	isItemAvailable: (item: EnrichedItem) => boolean;
 	formatCurrency: (n: number) => string;
 	onAddToCart: (p: {
 		itemId: string;
@@ -40,7 +40,7 @@ export default function MenuSection({ ...props }: Props) {
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))] gap-5 xl:gap-6">
 				{items.map((it) => {
 					const qty = props.getQty(it.id);
-					const max = it.maxPerOrder ?? 99;
+					const max = Math.min(it.maxPerOrder ?? 99, it.remaining ?? 99);
 					return (
 						<MenuCard
 							key={it.id}
@@ -58,7 +58,7 @@ export default function MenuSection({ ...props }: Props) {
 									image: it.image,
 									categoryId: it.categoryId,
 									categoryName: props.section.category.name,
-									maxPerOrder: it.maxPerOrder,
+									maxPerOrder: max,
 								})
 							}
 							onSetQty={(newQty: number) =>
@@ -70,7 +70,7 @@ export default function MenuSection({ ...props }: Props) {
 									image: it.image,
 									categoryId: it.categoryId,
 									categoryName: props.section.category.name,
-									maxPerOrder: it.maxPerOrder,
+									maxPerOrder: max,
 								})
 							}
 						/>
