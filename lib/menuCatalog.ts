@@ -31,7 +31,7 @@ export type EnrichedItem = Item & {
 
 export type MenuCatalog = {
     categories: Category[];
-    items: Item[];
+    items: EnrichedItem[];
 };
 
 export type MenuResponse = {
@@ -42,14 +42,15 @@ export type MenuResponse = {
 
 export type Section = {
     category: Category;
-    items: Item[];
+    items: EnrichedItem[];
 };
 
 /*----helpers----*/
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function isItemAvailable(item: Item, _now = new Date()): boolean {
-    return item?.availability.inStock === true;
+export function isItemAvailable(item: EnrichedItem, _now = new Date()): boolean {
+    return (item.available ?? item.availability.inStock) === true
+        && (item.remaining === undefined || item.remaining > 0);
 }
 
 export function formatCurrency(n:number, locale = "en-US", currency = "USD") {
@@ -65,7 +66,7 @@ export function buildSections(catalog:MenuCatalog): Section[] {
     const catById = new Map(catalog.categories.map((c) => [c.id, c]));
     const orphanIds: string[] = [];
 
-    const itemsByCat = new Map<string, Item[]>();
+    const itemsByCat = new Map<string, EnrichedItem[]>();
     for (const item of catalog.items) {
         if(!catById.has(item.categoryId)) {
             orphanIds.push(item.id);

@@ -1,8 +1,8 @@
-import type { Item } from "@/lib/menuCatalog";
+import type { EnrichedItem } from "@/lib/menuCatalog";
 import { DemandSignalButton } from "./DemandSignalButton";
 
 type Props = {
-	item: Item;
+	item: EnrichedItem;
 	available: boolean;
 	formatCurrency: (n: number) => string;
 	qty: number;
@@ -12,7 +12,9 @@ type Props = {
 };
 
 export default function MenuCard({ item, available, formatCurrency, qty, maxPerOrder, onAdd, onSetQty }: Props) {
-	const canInc = qty < maxPerOrder;
+	const inStock = available && (item.remaining === undefined || item.remaining > 0);
+	const maxQuantity = Math.min(maxPerOrder, item.remaining ?? maxPerOrder);
+	const canInc = qty < maxQuantity;
 	const canDec = qty > 0;
 
 	return (
@@ -45,7 +47,10 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 				) : null}
 
 				<div className="mt-auto flex flex-wrap items-center gap-4 gap-y-3 pt-4">
-					{!available ? (
+					{inStock && item.remaining !== undefined ? (
+						<span className="text-sm font-semibold text-cocoa">{item.remaining} left</span>
+					) : null}
+					{!inStock ? (
 						<div>
 							<span className="mb-2 block text-sm font-semibold text-berry">Sold Out</span>
 							<DemandSignalButton productId={item.id} label="Bummed I missed this" />
@@ -74,9 +79,9 @@ export default function MenuCard({ item, available, formatCurrency, qty, maxPerO
 								type="number"
 								value={qty}
 								min={0}
-								max={maxPerOrder}
+								max={maxQuantity}
 								onChange={(e) => {
-									const v = Math.max(0, Math.min(maxPerOrder, Number(e.target.value) || 0));
+									const v = Math.max(0, Math.min(maxQuantity, Number(e.target.value) || 0));
 									onSetQty(v);
 								}}
 								aria-label={`Set ${item.name} quantity`}

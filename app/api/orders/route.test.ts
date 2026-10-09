@@ -85,6 +85,22 @@ describe("POST /api/orders", () => {
 		expect(mockNotify).not.toHaveBeenCalled();
 	});
 
+	it("rejects a stale cart using current server inventory even when the client advertises stock", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: { message: "OUT_OF_STOCK: stock changed after menu load" } });
+		const response = await POST(request({
+			...trustedRequest,
+			items: [{ productId: "cake", quantity: 2, remaining: 12, available: true }],
+		}));
+		expect(mockRpc).toHaveBeenCalledWith("create_numbered_authoritative_order", expect.objectContaining({
+			p_items: [{ productId: "cake", quantity: 2 }],
+		}));
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			code: "OUT_OF_STOCK", error: "One or more products do not have enough stock.",
+		});
+		expect(mockNotify).not.toHaveBeenCalled();
+	});
+
 	it("rejects a missing pickup selection before calling the database", async () => {
 		const response = await POST(request({ ...trustedRequest, pickupWindowId: undefined }));
 		expect(response.status).toBe(400);

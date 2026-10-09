@@ -50,7 +50,7 @@ export default function MenuPage() {
 					maxPerOrder: p.maxPerOrder,
 				});
 			} else {
-				setQty(p.itemId, p.qty);
+				setQty(p.itemId, p.qty, p.maxPerOrder);
 			}
 		},
 		[addItem, getQty, setQty]

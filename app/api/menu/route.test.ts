@@ -183,6 +183,16 @@ describe("GET /api/menu", () => {
 		});
 	});
 
+	it.each([12, 1, 0])("keeps remaining %i consistent with both availability fields", async (remaining) => {
+		setDatabaseResults({ inventoryRows: [{ product_id: "apple-cake", quantity_on_hand: remaining }] });
+		const response = await GET();
+		const body = await response.json();
+		expect(response.status).toBe(200);
+		expect(body.items.find((item: { id: string }) => item.id === "apple-cake")).toMatchObject({
+			remaining, available: remaining > 0, availability: { inStock: remaining > 0 },
+		});
+	});
+
 	it("sorts categories and products deterministically", async () => {
 		setDatabaseResults({
 			productRows: [

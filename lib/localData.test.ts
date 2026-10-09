@@ -85,6 +85,25 @@ describe("local JSON data", () => {
 		expect((JSON.parse(await readFile(dataFile, "utf8")) as LocalData).orders).toEqual([]);
 	});
 
+	it("rejects a stale cart after another customer consumes the advertised stock", async () => {
+		const staleMenu = await getLocalMenu();
+		expect(staleMenu.items[0].remaining).toBe(3);
+		const input = {
+			customer: { name: "Local Customer", email: "local@example.test" },
+			payment: { method: "cash" as const }, pickupWindowId,
+			items: [{ productId: "cake", quantity: 3 }],
+		};
+		await createLocalOrder(input, { id: "ord_other_customer", now: new Date("2026-01-01T00:00:00.000Z") });
+		expect((await getLocalMenu()).items[0]).toMatchObject({
+			remaining: 0, available: false, availability: { inStock: false },
+		});
+		await expect(createLocalOrder(input, { id: "ord_stale_cart", now: new Date("2026-01-01T00:01:00.000Z") }))
+			.rejects.toMatchObject({ code: "OUT_OF_STOCK" });
+		const saved = JSON.parse(await readFile(dataFile, "utf8")) as LocalData;
+		expect(saved.orders).toHaveLength(1);
+		expect(saved.inventory[0].quantity_on_hand).toBe(0);
+	});
+
 	it("records demand for unavailable products", async () => {
 		const data = testData();
 		data.inventory[0].quantity_on_hand = 0;

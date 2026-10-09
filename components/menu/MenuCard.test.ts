@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import MenuCard from "./MenuCard";
-import type { Item } from "@/lib/menuCatalog";
+import type { Item, EnrichedItem } from "@/lib/menuCatalog";
 
 function render(image?: string) {
 	const item: Item = {
@@ -48,6 +48,29 @@ describe("MenuCard product images", () => {
 });
 
 describe("MenuCard availability", () => {
+	it.each([12, 1])("shows %i left alongside Add To Cart", (remaining) => {
+		const item: EnrichedItem = {
+			id: "cake", name: "Cake", categoryId: "cakes", basePrice: 4,
+			remaining, available: true, availability: { inStock: true },
+		};
+		const html = renderItem(item);
+		expect(html).toContain(`${remaining} left`);
+		expect(html).toContain("Add To Cart");
+		expect(html).not.toContain("Sold Out");
+	});
+
+	it("uses zero remaining stock even if an availability flag says available", () => {
+		const item: EnrichedItem = {
+			id: "cake", name: "Cake", categoryId: "cakes", basePrice: 4,
+			remaining: 0, available: true, availability: { inStock: true },
+		};
+		const html = renderItem(item);
+		expect(html).toContain("Sold Out");
+		expect(html).toContain("Bummed I missed this");
+		expect(html).not.toContain("Add To Cart");
+		expect(html).not.toContain("0 left");
+	});
+
 	it("offers an anonymous demand action when sold out", () => {
 		const item: Item = { id: "cake", name: "Cake", categoryId: "cakes", basePrice: 4, availability: { inStock: false } };
 		const html = renderToStaticMarkup(createElement(MenuCard, {
